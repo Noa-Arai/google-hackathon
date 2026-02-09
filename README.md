@@ -76,6 +76,8 @@ google-hackathon/
 │   │   ├── adapter/http/       # Handler, DTO, Router
 │   │   └── infra/              # Firestore, Gemini実装
 │   └── web/                    # Next.js フロントエンド
+├── infra/
+│   └── terraform/              # GCP インフラ (Terraform)
 ├── scripts/                    # ユーティリティスクリプト
 └── README.md
 ```
@@ -168,6 +170,20 @@ npm install
 npm run dev
 ```
 → http://localhost:3000 で起動
+
+## Terraform でインフラ構築（推奨）
+
+GCP の API 有効化・Firestore・Secret Manager・Cloud Run をコードで管理する場合は `infra/terraform` を使用します。
+
+```bash
+cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars で project_id を設定
+terraform init
+terraform apply
+```
+
+詳細は [infra/terraform/README.md](infra/terraform/README.md) を参照してください。
 
 ## Cloud Run デプロイ
 
