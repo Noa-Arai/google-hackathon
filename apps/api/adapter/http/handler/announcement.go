@@ -1,0 +1,80 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"github.com/noa/circle-app/api/adapter/http/dto"
+	"github.com/noa/circle-app/api/usecase"
+)
+
+// AnnouncementHandler handles announcement-related HTTP requests.
+type AnnouncementHandler struct {
+	interactor *usecase.AnnouncementInteractor
+}
+
+// NewAnnouncementHandler creates a new AnnouncementHandler.
+func NewAnnouncementHandler(i *usecase.AnnouncementInteractor) *AnnouncementHandler {
+	return &AnnouncementHandler{interactor: i}
+}
+
+// Create handles POST /announcements.
+func (h *AnnouncementHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var req dto.CreateAnnouncementRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	announcement, err := h.interactor.CreateAnnouncement(
+		r.Context(),
+		req.CircleID,
+		req.EventID,
+		req.Title,
+		req.Body,
+		req.CreatedBy,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(announcement)
+}
+
+// GetByEvent handles GET /events/{eventId}/announcements.
+func (h *AnnouncementHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("eventId")
+	announcements, err := h.interactor.GetByEvent(r.Context(), eventID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(announcements)
+}
+
+// GetByCircle handles GET /circles/{circleId}/announcements.
+func (h *AnnouncementHandler) GetByCircle(w http.ResponseWriter, r *http.Request) {
+	circleID := r.PathValue("circleId")
+	limitStr := r.URL.Query().Get("limit")
+	limit := 10
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	announcements, err := h.interactor.GetByCircle(r.Context(), circleID, limit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(announcements)
+}
