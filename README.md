@@ -2,6 +2,9 @@
 
 AIチャットを主役としたサークル活動支援Webアプリケーション。
 
+> [!NOTE]
+> このプロジェクトはGoogle Hackathon用のMVPです。認証はダミー実装（`X-User-Id`ヘッダー）で代用しています。
+
 ---
 
 ## 📋 プロジェクト現状（引き継ぎ用）
@@ -14,21 +17,22 @@ AIチャットを主役としたサークル活動支援Webアプリケーショ
 | **Gemini AI** | チャット機能（お知らせ参照） | ✅ 完了 |
 | **Next.js** | 全ページ（お知らせ/カレンダー/支払い/イベント詳細） | ✅ 完了 |
 | **ChatPanel** | AIチャットUI（参照元リンク付き） | ✅ 完了 |
-| **出欠登録** | RSVP機能（GO/NO/LATE/EARLY） | ✅ 完了 |
+| **RSVP** | 出欠機能（GO/NO/LATE/EARLY） | ✅ 完了 |
 | **清算機能** | 銀行/PayPay、支払い報告 | ✅ 完了 |
 | **イベント作成** | `/events/new` でUIから作成可能 | ✅ 完了 |
 | **お知らせ作成** | イベント詳細ページ内で作成可能 | ✅ 完了 |
 | **清算作成** | イベント詳細ページ内で作成可能 | ✅ 完了 |
 | **UI/UX** | BOILED風ダークネイビーデザイン | ✅ 完了 |
-| **README** | サンプルデータ投入、デモ台本 | ✅ 完了 |
 
 ### ⚠️ 未実装・MVP割り切り
 | カテゴリ | 内容 | 備考 |
 |----------|------|------|
+| **出席機能** | お知らせ単位の出欠登録 | usecase・UIは実装済み。API接続（domain/infra/handler/router）が未完了 |
 | **認証** | ログイン/ユーザー管理 | 現状: `X-User-Id`ヘッダーで代用 |
 | **サークル作成UI** | サークル管理画面 | API経由でのみ作成可能（1回だけでOK） |
 | **テスト** | 単体/結合テスト | 未実装 |
 | **本番デプロイ** | Cloud Run / Vercel | 手順はREADMEに記載済み |
+| **API用`.env`** | 環境変数定義ファイル | 未作成（毎回`export`が必要） |
 
 ### 🚀 デプロイ担当者向けチェックリスト
 
@@ -70,31 +74,70 @@ AIチャットを主役としたサークル活動支援Webアプリケーショ
 ```
 google-hackathon/
 ├── apps/
-│   ├── api/                    # Go API (Clean Architecture)
-│   │   ├── domain/             # Entity, Error (外部依存ゼロ)
-│   │   ├── usecase/            # Interactor, Port (interface)
-│   │   ├── adapter/http/       # Handler, DTO, Router
-│   │   └── infra/              # Firestore, Gemini実装
-│   └── web/                    # Next.js フロントエンド
-├── infra/
-│   └── terraform/              # GCP インフラ (Terraform)
-├── scripts/                    # ユーティリティスクリプト
+│   ├── api/                          # Go API (Clean Architecture)
+│   │   ├── main.go                   # エントリーポイント（DI・サーバー起動）
+│   │   ├── go.mod / go.sum           # Goモジュール定義
+│   │   ├── Dockerfile                # マルチステージビルド
+│   │   ├── domain/                   # ドメイン層（外部依存ゼロ）
+│   │   │   ├── entity.go             #   エンティティ定義
+│   │   │   └── errors.go             #   ドメインエラー
+│   │   ├── usecase/                  # ユースケース層
+│   │   │   ├── circle.go             #   サークル
+│   │   │   ├── event.go              #   イベント
+│   │   │   ├── announcement.go       #   お知らせ
+│   │   │   ├── rsvp.go               #   RSVP（出欠）
+│   │   │   ├── settlement.go         #   清算
+│   │   │   ├── attendance.go         #   出席（⚠️ API未接続）
+│   │   │   └── chat.go               #   AIチャット
+│   │   ├── adapter/http/             # アダプター層
+│   │   │   ├── handler/              #   HTTPハンドラー
+│   │   │   ├── dto/                  #   リクエスト/レスポンスDTO
+│   │   │   └── router/router.go      #   ルーティング定義
+│   │   ├── infra/                    # インフラ層
+│   │       ├── firestore/            #   Firestoreリポジトリ実装
+│   │       └── gemini/               #   Gemini AI実装
+│   └── web/                          # Next.js フロントエンド
+│       ├── src/
+│       │   ├── app/                   #   ページ（App Router）
+│       │   │   ├── announcements/     #     お知らせ一覧・詳細
+│       │   │   ├── calendar/          #     カレンダー
+│       │   │   ├── events/            #     イベント詳細・作成
+│       │   │   └── payments/          #     支払い管理
+│       │   ├── components/            #   UIコンポーネント
+│       │   ├── features/              #   機能モジュール
+│       │   └── lib/                   #   APIクライアント・ユーティリティ
+│       └── .env.local                 #   環境変数（API URL設定済み）
+├── scripts/
+│   └── seed.go                        # サンプルデータ投入スクリプト
+├── docker-compose.yml                 # Docker構成
 └── README.md
 ```
 
 ## 環境変数
 
-### API (apps/api)
-| 変数 | 必須 | 説明 |
-|------|------|------|
-| GCP_PROJECT_ID | ✅ | GCPプロジェクトID |
-| GEMINI_API_KEY | ✅ | Gemini API Key |
-| PORT | - | ポート番号（デフォルト: 8080） |
+### API（`apps/api`）— ⚠️ `.env`ファイル未作成
 
-### Frontend (apps/web)
-| 変数 | 必須 | 説明 |
-|------|------|------|
-| NEXT_PUBLIC_API_BASE_URL | ✅ | API URL |
+現在、API側には`.env`ファイルがないため、起動時に毎回`export`する必要があります。
+
+| 変数 | 必須 | 説明 | 現状 |
+|------|------|------|------|
+| `GCP_PROJECT_ID` | ✅ | GCPプロジェクトID | 未設定（要`export`） |
+| `GEMINI_API_KEY` | ✅ | Gemini API Key | 未設定（要`export`） |
+| `PORT` | - | ポート番号（デフォルト: 8080） | — |
+
+```bash
+# API起動前に毎回実行が必要
+export GCP_PROJECT_ID=your-project-id
+export GEMINI_API_KEY=your-api-key
+```
+
+### フロントエンド（`apps/web`）— ✅ 設定済み
+
+`apps/web/.env.local` に設定済み:
+
+| 変数 | 必須 | 説明 | 現状 |
+|------|------|------|------|
+| `NEXT_PUBLIC_API_BASE_URL` | ✅ | API URL | ✅ `http://localhost:8080` |
 
 ## API エンドポイント
 
