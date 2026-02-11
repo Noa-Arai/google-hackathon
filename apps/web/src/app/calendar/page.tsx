@@ -79,7 +79,7 @@ export default function CalendarPage() {
             ) : Object.keys(eventsByMonth).length === 0 ? (
                 <div className="card p-16 text-center animate-fade-in">
                     <span className="text-6xl mb-6 block opacity-20">📅</span>
-                    <h2 className="text-xl font-semibold text-white mb-2">予定はまだありません</h2>
+                    <h2 className="text-xl font-semibold text-white mb-2">予定は、まだありません</h2>
                     <p className="text-[#8b98b0]">イベントが作成されると、ここに表示されます</p>
                 </div>
             ) : (
