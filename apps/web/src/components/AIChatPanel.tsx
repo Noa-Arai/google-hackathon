@@ -39,11 +39,13 @@ export default function AIChatPanel() {
         setIsLoading(true);
 
         try {
-            const response: ChatResponse = await api.askAI(question);
+            // TODO: Use actual circle ID
+            const circleId = 'c1';
+            const response: ChatResponse = await api.chat(circleId, question);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: response.answer,
-                references: response.references,
+                content: response.assistantMessage,
+                references: response.references?.map(r => r.title), // ChatReference[] -> string[]?
             }]);
         } catch {
             setMessages(prev => [...prev, {
@@ -89,8 +91,8 @@ export default function AIChatPanel() {
                             >
                                 <div
                                     className={`max-w-[80%] rounded-2xl px-4 py-2 ${message.role === 'user'
-                                            ? 'bg-indigo-600 text-white rounded-br-md'
-                                            : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                                        ? 'bg-indigo-600 text-white rounded-br-md'
+                                        : 'bg-gray-100 text-gray-800 rounded-bl-md'
                                         }`}
                                 >
                                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>

@@ -64,6 +64,9 @@ export const api = {
     createAnnouncement: (data: CreateAnnouncementRequest) =>
         apiRequest<Announcement>('/announcements', { method: 'POST', body: data }),
 
+    getAnnouncement: (id: string, userId?: string) =>
+        apiRequest<AnnouncementDetail>(`/announcements/${id}`, { userId }),
+
     // RSVP
     submitRSVP: (eventId: string, status: string, note?: string) =>
         apiRequest<RSVP>(`/events/${eventId}/rsvp`, { method: 'POST', body: { status, note } }),
@@ -146,8 +149,28 @@ export interface Announcement {
     eventId: string;
     title: string;
     body: string;
+    imageUrl?: string;
+    targetUserIds?: string[];
     createdBy: string;
     createdAt: string;
+}
+
+export interface AnnouncementDetail {
+    announcement: Announcement;
+    attendance?: RSVP;
+    payments?: AnnouncementPayment[];
+    isTarget: boolean;
+}
+
+export interface AnnouncementPayment {
+    id: string;
+    announcementId: string;
+    userId: string;
+    amount: number;
+    description: string;
+    isPaid: boolean;
+    bankInfo: string;
+    paypayInfo: string;
 }
 
 export interface RSVP {

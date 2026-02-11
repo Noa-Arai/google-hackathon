@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Payment } from '@/lib/api';
+import { AnnouncementPayment } from '@/lib/api';
 
 interface Props {
-    payments: Payment[];
+    payments: AnnouncementPayment[];
 }
 
 export default function PaymentInfo({ payments }: Props) {
@@ -44,8 +44,8 @@ export default function PaymentInfo({ payments }: Props) {
                         <button
                             onClick={() => setActiveTab('bank')}
                             className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'bank'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             🏦 銀行振込
@@ -53,8 +53,8 @@ export default function PaymentInfo({ payments }: Props) {
                         <button
                             onClick={() => setActiveTab('paypay')}
                             className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'paypay'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             📱 PayPay
