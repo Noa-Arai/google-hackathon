@@ -171,6 +171,11 @@ npm run dev
 ```
 → http://localhost:3000 で起動
 
+## デプロイしたい場合
+
+**一通りな手順は [docs/DEPLOY.md](docs/DEPLOY.md) にまとめてあります。**  
+（GCP・gcloud ログイン → Terraform または手動で API デプロイ → Vercel でフロント）
+
 ## Terraform でインフラ構築（推奨）
 
 GCP の API 有効化・Firestore・Secret Manager・Cloud Run をコードで管理する場合は `infra/terraform` を使用します。

@@ -84,8 +84,6 @@ resource "google_cloud_run_v2_service" "api" {
   location = var.region
 
   ingress = "INGRESS_TRAFFIC_ALL"
-  # ハッカソン用: 削除しやすくする
-  deletion_protection = false
 
   template {
     scaling {
@@ -133,8 +131,9 @@ resource "google_cloud_run_v2_service" "api" {
 # 未認証で Cloud Run を呼べるようにする（ハッカソン用）
 resource "google_cloud_run_v2_service_iam_member" "api_public" {
   count    = var.cloud_run_api_image != "" ? 1 : 0
-  name     = google_cloud_run_v2_service.api[0].name
+  project  = var.project_id
   location = google_cloud_run_v2_service.api[0].location
+  name     = google_cloud_run_v2_service.api[0].name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
