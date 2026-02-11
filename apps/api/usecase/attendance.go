@@ -1,5 +1,8 @@
+// AttendanceUsecase は未実装のためコメントアウト。
+// domain.Attendance / AttendanceRepository 等が定義されたら有効化すること。
 package usecase
 
+/*
 import (
 	"context"
 
@@ -50,3 +53,4 @@ func (u *AttendanceUsecase) Update(ctx context.Context, attendance *domain.Atten
 func (u *AttendanceUsecase) GetByAnnouncement(ctx context.Context, announcementID string) ([]*domain.Attendance, error) {
 	return u.attendanceRepo.GetByAnnouncement(ctx, announcementID)
 }
+*/

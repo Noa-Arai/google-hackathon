@@ -18,6 +18,16 @@ func Setup(
 ) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// Root: simple message (avoid 404 when opening URL in browser)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message":"Circle API","health":"/health"}`))
+	})
 	// Health check
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
