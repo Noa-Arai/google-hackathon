@@ -85,10 +85,9 @@ func main() {
 
 	// Setup CORS
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"*"},
-		AllowCredentials: true,
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"*"},
 	})
 
 	httpHandler := c.Handler(mux)
