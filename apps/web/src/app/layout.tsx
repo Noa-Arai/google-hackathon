@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Header from '@/components/Header';
+import { UserProvider } from '@/components/providers/UserContext';
 
 export const metadata: Metadata = {
   title: 'CIRCLE | サークル活動支援',
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="bg-black">
-        <Header />
-        <main className="pt-24 pb-16 px-6 min-h-screen">
-          {children}
-        </main>
+        <UserProvider>
+          <Header />
+          <main className="pt-24 pb-16 px-6 min-h-screen">
+            {children}
+          </main>
+        </UserProvider>
       </body>
     </html>
   );

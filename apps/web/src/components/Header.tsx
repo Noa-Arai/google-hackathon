@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import UserSwitcher from './UserSwitcher';
 
 interface HeaderProps {
     circleName?: string;
@@ -10,11 +11,6 @@ interface HeaderProps {
 export default function Header({ circleName = 'CIRCLE' }: HeaderProps) {
     const pathname = usePathname();
 
-    const navItems = [
-        { href: '/announcements', label: 'ホーム' },
-        { href: '/calendar', label: 'カレンダー' },
-        { href: '/payments', label: '支払い' },
-    ];
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
@@ -29,32 +25,52 @@ export default function Header({ circleName = 'CIRCLE' }: HeaderProps) {
 
                     {/* Navigation */}
                     <nav className="flex items-center gap-8">
-                        {navItems.map((item) => {
-                            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`relative text-sm font-medium tracking-wide transition-all ${isActive
-                                        ? 'text-white'
-                                        : 'text-[#8b98b0] hover:text-white'
-                                        }`}
-                                >
-                                    {item.label}
-                                    {isActive && (
-                                        <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#3b82f6]" />
-                                    )}
-                                </Link>
-                            );
-                        })}
-
-                        {/* Create Event Button */}
+                        {/* Event List / Calendar */}
                         <Link
-                            href="/events/new"
-                            className="ml-4 px-4 py-2 rounded-lg bg-[#3b82f6] text-white text-sm font-medium hover:bg-[#2563eb] transition-colors flex items-center gap-2"
+                            href="/events"
+                            className={`relative text-sm font-medium tracking-wide transition-all ${pathname.startsWith('/events')
+                                ? 'text-white'
+                                : 'text-[#8b98b0] hover:text-white'
+                                }`}
                         >
-                            <span>+</span> 新規作成
+                            イベント一覧
+                            {pathname.startsWith('/events') && (
+                                <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#3b82f6]" />
+                            )}
                         </Link>
+
+                        {/* Payments */}
+                        <Link
+                            href="/payments"
+                            className={`relative text-sm font-medium tracking-wide transition-all ${pathname.startsWith('/payments')
+                                ? 'text-white'
+                                : 'text-[#8b98b0] hover:text-white'
+                                }`}
+                        >
+                            精算
+                            {pathname.startsWith('/payments') && (
+                                <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#3b82f6]" />
+                            )}
+                        </Link>
+
+                        {/* My Page */}
+                        <Link
+                            href="/profile"
+                            className={`relative text-sm font-medium tracking-wide transition-all ${pathname.startsWith('/profile')
+                                ? 'text-white'
+                                : 'text-[#8b98b0] hover:text-white'
+                                }`}
+                        >
+                            マイページ
+                            {pathname.startsWith('/profile') && (
+                                <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#3b82f6]" />
+                            )}
+                        </Link>
+
+                        {/* User Switcher */}
+                        <div className="ml-4 pl-4 border-l border-white/10">
+                            <UserSwitcher />
+                        </div>
                     </nav>
                 </div>
             </div>

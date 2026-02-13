@@ -137,3 +137,23 @@ func (h *SettlementHandler) ReportPayment(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(payment)
 }
+
+// Update handles PUT /settlements/{id}.
+func (h *SettlementHandler) Update(w http.ResponseWriter, r *http.Request) {
+	settlementID := r.PathValue("id")
+
+	var req dto.UpdateSettlementRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	settlement, err := h.interactor.UpdateSettlement(r.Context(), settlementID, req.Title, req.Amount, req.DueAt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(settlement)
+}

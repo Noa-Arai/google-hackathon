@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { api, Event, Announcement, Settlement } from '@/lib/api';
 import { DEFAULT_USER_ID } from '@/lib/constants';
+import { useUser } from '@/components/providers/UserContext';
 import RSVPPanel from '@/features/rsvp/RSVPPanel';
 import SettlementPanel from '@/features/settlement/SettlementPanel';
 import CreateAnnouncementForm from '@/features/announcement/CreateAnnouncementForm';
@@ -11,9 +12,93 @@ import CreateSettlementForm from '@/features/settlement/CreateSettlementForm';
 import ChatPanel from '@/components/ChatPanel';
 import Link from 'next/link';
 
-export default function EventDetailPage() {
+function SettlementCard({ settlement, onUpdated }: { settlement: Settlement; onUpdated: () => void }) {
+    const [editing, setEditing] = useState(false);
+    const [title, setTitle] = useState(settlement.title);
+    const [amount, setAmount] = useState(settlement.amount);
+    const [dueAt, setDueAt] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (settlement.dueAt) {
+            const d = new Date(settlement.dueAt);
+            setDueAt(d.toISOString().slice(0, 10));
+        }
+    }, [settlement.dueAt]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await api.updateSettlement(settlement.id, {
+                title,
+                amount,
+                dueAt: new Date(dueAt).toISOString(),
+            });
+            setEditing(false);
+            onUpdated();
+        } catch (e) {
+            console.error('Failed to update settlement:', e);
+            alert('更新に失敗しました');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (editing) {
+        return (
+            <div className="p-5 rounded-xl bg-[#0a0f1c] border border-[#3b82f6]/50 space-y-3">
+                <input
+                    type="text" value={title} onChange={e => setTitle(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-[#3b82f6]"
+                    placeholder="タイトル"
+                />
+                <div className="flex gap-3">
+                    <input
+                        type="number" value={amount} onChange={e => setAmount(Number(e.target.value))}
+                        className="flex-1 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-[#3b82f6]"
+                        placeholder="金額"
+                    />
+                    <input
+                        type="date" value={dueAt} onChange={e => setDueAt(e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-[#3b82f6]"
+                    />
+                </div>
+                <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-sm text-[#8b98b0] hover:text-white">キャンセル</button>
+                    <button onClick={handleSave} disabled={saving}
+                        className="px-4 py-1.5 text-sm bg-[#3b82f6] text-white rounded-lg hover:bg-[#2563eb] disabled:opacity-50">
+                        {saving ? '保存中...' : '保存'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-5 rounded-xl bg-[#0a0f1c] border border-[#2a3548] group/card">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h3 className="font-semibold text-white">{settlement.title}</h3>
+                    <p className="text-sm text-[#8b98b0] mt-1">
+                        期限: {new Date(settlement.dueAt).toLocaleDateString('ja-JP')}
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-xl font-bold text-white">
+                        ¥{settlement.amount.toLocaleString()}
+                    </span>
+                    <button onClick={() => setEditing(true)}
+                        className="text-sm text-[#8b98b0] hover:text-[#3b82f6] transition-all">
+                        編集
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+} export default function EventDetailPage() {
     const params = useParams();
     const eventId = params.id as string;
+    const { currentUser } = useUser();
 
     const [event, setEvent] = useState<Event | null>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -102,7 +187,13 @@ export default function EventDetailPage() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] via-[#0a0f1c]/50 to-transparent" />
                             <div className="absolute bottom-0 left-0 right-0 p-8">
-                                <h1 className="text-3xl font-black text-white mb-4">{event.title}</h1>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h1 className="text-3xl font-black text-white">{event.title}</h1>
+                                    <Link href={`/events/${eventId}/edit`}
+                                        className="text-sm text-[#8b98b0] hover:text-[#3b82f6] transition-colors">
+                                        編集
+                                    </Link>
+                                </div>
                                 <div className="flex flex-wrap gap-4">
                                     {event.startAt && (
                                         <span className="flex items-center gap-2 text-sm text-white bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
@@ -122,7 +213,13 @@ export default function EventDetailPage() {
                             <div className="w-full h-56 bg-gradient-to-br from-[#151d2e] to-[#1a2438] rounded-xl flex items-center justify-center mb-6">
                                 <span className="text-8xl opacity-20">📢</span>
                             </div>
-                            <h1 className="text-3xl font-black text-white mb-4">{event.title}</h1>
+                            <div className="flex items-center justify-between mb-4">
+                                <h1 className="text-3xl font-black text-white">{event.title}</h1>
+                                <Link href={`/events/${eventId}/edit`}
+                                    className="text-sm text-[#8b98b0] hover:text-[#3b82f6] transition-colors">
+                                    編集
+                                </Link>
+                            </div>
                             <div className="flex flex-wrap gap-4">
                                 {event.startAt && (
                                     <span className="flex items-center gap-2 text-sm text-[#8b98b0]">
@@ -181,19 +278,7 @@ export default function EventDetailPage() {
                     {settlements.length > 0 ? (
                         <div className="space-y-4 mb-6">
                             {settlements.map((settlement) => (
-                                <div key={settlement.id} className="p-5 rounded-xl bg-[#0a0f1c] border border-[#2a3548]">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{settlement.title}</h3>
-                                            <p className="text-sm text-[#8b98b0] mt-1">
-                                                期限: {new Date(settlement.dueAt).toLocaleDateString('ja-JP')}
-                                            </p>
-                                        </div>
-                                        <span className="text-xl font-bold text-white">
-                                            ¥{settlement.amount.toLocaleString()}
-                                        </span>
-                                    </div>
-                                </div>
+                                <SettlementCard key={settlement.id} settlement={settlement} onUpdated={handleRefresh} />
                             ))}
                         </div>
                     ) : (

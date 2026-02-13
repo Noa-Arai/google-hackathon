@@ -11,8 +11,9 @@ export default function CreateEventPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [eventType, setEventType] = useState<'practice' | 'special'>('practice');
+    const [titleInput, setTitleInput] = useState('');
     const [formData, setFormData] = useState({
-        title: '',
         startAt: '',
         location: '',
         coverImageUrl: '',
@@ -20,7 +21,7 @@ export default function CreateEventPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.title || !formData.startAt) {
+        if (!titleInput || !formData.startAt) {
             setError('タイトルと日時は必須です');
             return;
         }
@@ -28,10 +29,15 @@ export default function CreateEventPage() {
         setIsSubmitting(true);
         setError(null);
 
+        // Auto-prefix title based on type
+        const finalTitle = eventType === 'practice'
+            ? `【通常練習】${titleInput}`
+            : `【特別イベント】${titleInput}`;
+
         try {
             const result = await api.createEvent({
                 circleId: DEFAULT_CIRCLE_ID,
-                title: formData.title,
+                title: finalTitle,
                 startAt: new Date(formData.startAt).toISOString(),
                 location: formData.location || undefined,
                 coverImageUrl: formData.coverImageUrl || undefined,
@@ -50,8 +56,8 @@ export default function CreateEventPage() {
     return (
         <div className="max-w-2xl mx-auto">
             {/* Back Link */}
-            <Link href="/announcements" className="text-[#8b98b0] hover:text-[#3b82f6] inline-flex items-center gap-2 transition-colors animate-slide-in mb-8">
-                <span>←</span> お知らせ一覧に戻る
+            <Link href="/events" className="text-[#8b98b0] hover:text-[#3b82f6] inline-flex items-center gap-2 transition-colors animate-slide-in mb-8">
+                <span>←</span> イベント一覧に戻る
             </Link>
 
             {/* Header */}
@@ -63,6 +69,37 @@ export default function CreateEventPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="card p-8 animate-fade-in space-y-6">
+                {/* Event Type */}
+                <div>
+                    <label className="block text-sm font-medium text-[#8b98b0] mb-3">
+                        イベント種別 <span className="text-[#ef4444]">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setEventType('practice')}
+                            className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${eventType === 'practice'
+                                    ? 'bg-[#10b981]/20 border-[#10b981] text-[#10b981]'
+                                    : 'bg-[#0a0f1c] border-[#2a3548] text-[#8b98b0] hover:border-[#3b82f6]'
+                                }`}
+                        >
+                            <span className="text-2xl">🎾</span>
+                            <span className="font-bold">通常練習</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setEventType('special')}
+                            className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${eventType === 'special'
+                                    ? 'bg-[#8b5cf6]/20 border-[#8b5cf6] text-[#8b5cf6]'
+                                    : 'bg-[#0a0f1c] border-[#2a3548] text-[#8b98b0] hover:border-[#3b82f6]'
+                                }`}
+                        >
+                            <span className="text-2xl">🎉</span>
+                            <span className="font-bold">特別イベント</span>
+                        </button>
+                    </div>
+                </div>
+
                 {/* Title */}
                 <div>
                     <label className="block text-sm font-medium text-[#8b98b0] mb-2">
@@ -70,8 +107,8 @@ export default function CreateEventPage() {
                     </label>
                     <input
                         type="text"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        value={titleInput}
+                        onChange={(e) => setTitleInput(e.target.value)}
                         placeholder="例: 春季テニス大会"
                         className="w-full px-5 py-4 rounded-xl bg-[#0a0f1c] border border-[#2a3548] text-white placeholder-[#5a6580] focus:outline-none focus:border-[#3b82f6]"
                     />

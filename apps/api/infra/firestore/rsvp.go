@@ -67,3 +67,31 @@ func (r *RSVPRepository) GetByEventAndUser(ctx context.Context, eventID, userID 
 	rsvp.ID = doc.Ref.ID
 	return &rsvp, nil
 }
+
+// GetByEvent returns all RSVPs for a specific event.
+func (r *RSVPRepository) GetByEvent(ctx context.Context, eventID string) ([]*domain.RSVP, error) {
+	iter := r.client.Collection("rsvps").
+		Where("eventId", "==", eventID).
+		Documents(ctx)
+	defer iter.Stop()
+
+	var rsvps []*domain.RSVP
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		var rsvp domain.RSVP
+		if err := doc.DataTo(&rsvp); err != nil {
+			continue // Skip invalid data
+		}
+		rsvp.ID = doc.Ref.ID
+		rsvps = append(rsvps, &rsvp)
+	}
+
+	return rsvps, nil
+}

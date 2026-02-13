@@ -45,3 +45,27 @@ func (i *EventInteractor) GetEvent(ctx context.Context, id string) (*domain.Even
 func (i *EventInteractor) GetEventsByCircle(ctx context.Context, circleID string) ([]*domain.Event, error) {
 	return i.eventRepo.GetByCircle(ctx, circleID)
 }
+
+// UpdateEvent updates an event.
+func (i *EventInteractor) UpdateEvent(ctx context.Context, eventID, title string, startAt time.Time, location, coverImageURL string, rsvpTargetUserIDs []string) (*domain.Event, error) {
+	event, err := i.eventRepo.GetByID(ctx, eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	event.Title = title
+	event.StartAt = startAt
+	event.Location = location
+	event.CoverImageURL = coverImageURL
+	event.RSVPTargetUserIDs = rsvpTargetUserIDs
+
+	if err := i.eventRepo.Update(ctx, event); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// DeleteEvent deletes an event.
+func (i *EventInteractor) DeleteEvent(ctx context.Context, eventID string) error {
+	return i.eventRepo.Delete(ctx, eventID)
+}

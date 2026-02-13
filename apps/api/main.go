@@ -53,6 +53,7 @@ func main() {
 	rsvpRepo := firestoreRepo.NewRSVPRepository(firestoreClient)
 	settlementRepo := firestoreRepo.NewSettlementRepository(firestoreClient)
 	paymentRepo := firestoreRepo.NewPaymentRepository(firestoreClient)
+	userRepo := firestoreRepo.NewUserRepository(firestoreClient)
 
 	// Initialize AI service (infra layer)
 	aiService := gemini.NewAIService(geminiAPIKey)
@@ -61,9 +62,10 @@ func main() {
 	circleInteractor := usecase.NewCircleInteractor(circleRepo, membershipRepo)
 	eventInteractor := usecase.NewEventInteractor(eventRepo)
 	announcementInteractor := usecase.NewAnnouncementInteractor(announcementRepo)
-	rsvpInteractor := usecase.NewRSVPInteractor(rsvpRepo, eventRepo)
+	rsvpInteractor := usecase.NewRSVPInteractor(rsvpRepo, eventRepo, settlementRepo, paymentRepo)
 	settlementInteractor := usecase.NewSettlementInteractor(settlementRepo, paymentRepo)
-	chatInteractor := usecase.NewChatInteractor(announcementRepo, aiService)
+	chatInteractor := usecase.NewChatInteractor(announcementRepo, eventRepo, aiService)
+	userInteractor := usecase.NewUserInteractor(userRepo)
 
 	// Initialize handlers (adapter layer)
 	circleHandler := handler.NewCircleHandler(circleInteractor)
@@ -72,6 +74,7 @@ func main() {
 	rsvpHandler := handler.NewRSVPHandler(rsvpInteractor)
 	settlementHandler := handler.NewSettlementHandler(settlementInteractor)
 	chatHandler := handler.NewChatHandler(chatInteractor)
+	userHandler := handler.NewUserHandler(userInteractor)
 
 	// Setup router
 	mux := router.Setup(
@@ -81,6 +84,7 @@ func main() {
 		rsvpHandler,
 		settlementHandler,
 		chatHandler,
+		userHandler,
 	)
 
 	// Setup CORS

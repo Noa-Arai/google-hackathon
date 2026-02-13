@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
-import { DEFAULT_CIRCLE_ID, DEFAULT_USER_ID } from '@/lib/constants';
+import { DEFAULT_CIRCLE_ID } from '@/lib/constants';
+import { RSVP } from '@/lib/api/client';
 
 interface CreateSettlementFormProps {
     eventId: string;
@@ -26,13 +27,25 @@ export default function CreateSettlementForm({ eventId, onCreated }: CreateSettl
 
         setIsSubmitting(true);
         try {
+            // Fetch RSVPs and filter to only attending users (GO/LATE/EARLY)
+            const rsvps = await api.getEventRSVPs(eventId);
+            const targetUserIds = rsvps
+                .filter((r: RSVP) => ['GO', 'LATE', 'EARLY'].includes(r.status))
+                .map((r: RSVP) => r.userId);
+
+            if (targetUserIds.length === 0) {
+                alert('参加者がいないため、清算を作成できません。');
+                setIsSubmitting(false);
+                return;
+            }
+
             await api.createSettlement({
                 circleId: DEFAULT_CIRCLE_ID,
                 eventId,
                 title: formData.title,
                 amount: parseInt(formData.amount),
                 dueAt: new Date(formData.dueAt).toISOString(),
-                targetUserIds: [DEFAULT_USER_ID],
+                targetUserIds,
                 bankInfo: formData.bankInfo || undefined,
                 paypayInfo: formData.paypayInfo || undefined,
             });
@@ -41,6 +54,7 @@ export default function CreateSettlementForm({ eventId, onCreated }: CreateSettl
             onCreated();
         } catch (error) {
             console.error('Failed to create settlement:', error);
+            alert('清算の作成に失敗しました');
         } finally {
             setIsSubmitting(false);
         }
@@ -98,7 +112,7 @@ export default function CreateSettlementForm({ eventId, onCreated }: CreateSettl
                 <textarea
                     value={formData.bankInfo}
                     onChange={(e) => setFormData({ ...formData, bankInfo: e.target.value })}
-                    placeholder="三菱UFJ銀行 渋谷支店&#10;普通 1234567&#10;ヤマダ タロウ"
+                    placeholder={"三菱UFJ銀行 渋谷支店\n普通 1234567\nヤマダ タロウ"}
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl bg-[#0a0f1c] border border-[#2a3548] text-white placeholder-[#5a6580] focus:outline-none focus:border-[#3b82f6] resize-none"
                 />

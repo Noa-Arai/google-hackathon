@@ -89,3 +89,21 @@ func (h *RSVPHandler) GetMy(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(rsvp)
 }
+
+// GetByEvent handles GET /events/{eventId}/rsvps.
+func (h *RSVPHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("eventId")
+
+	rsvps, err := h.interactor.GetEventRSVPs(r.Context(), eventID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if rsvps == nil {
+		rsvps = []*domain.RSVP{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(rsvps)
+}

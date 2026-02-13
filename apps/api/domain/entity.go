@@ -2,30 +2,35 @@
 // This layer has ZERO external dependencies.
 package domain
 
-import "time"
+import (
+	"time"
+)
 
-// User represents a circle member.
+// User represents a user.
 type User struct {
-	ID    string `json:"id" firestore:"id"`
-	Name  string `json:"name" firestore:"name"`
-	Email string `json:"email" firestore:"email"`
+	ID        string    `json:"id" firestore:"id"`
+	Name      string    `json:"name" firestore:"name"`
+	AvatarURL string    `json:"avatarUrl" firestore:"avatarUrl"`
+	CreatedAt time.Time `json:"createdAt" firestore:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt" firestore:"updatedAt"`
 }
 
-// Circle represents a club/circle.
+// Circle represents a circle group.
 type Circle struct {
 	ID          string    `json:"id" firestore:"id"`
 	Name        string    `json:"name" firestore:"name"`
 	Description string    `json:"description" firestore:"description"`
 	LogoURL     string    `json:"logoUrl" firestore:"logoUrl"`
 	CreatedAt   time.Time `json:"createdAt" firestore:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt" firestore:"updatedAt"`
 }
 
 // MemberRole represents a member's role in a circle.
 type MemberRole string
 
 const (
-	RoleAdmin  MemberRole = "admin"
-	RoleMember MemberRole = "member"
+	RoleAdmin  MemberRole = "ADMIN"
+	RoleMember MemberRole = "MEMBER"
 )
 
 // Membership represents a user's membership in a circle.

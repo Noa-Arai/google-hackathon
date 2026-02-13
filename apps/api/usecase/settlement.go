@@ -91,17 +91,7 @@ func (i *SettlementInteractor) GetMySettlements(ctx context.Context, userID stri
 
 // ReportPayment reports a payment.
 func (i *SettlementInteractor) ReportPayment(ctx context.Context, settlementID, userID string, method domain.PaymentMethod, note string) (*domain.Payment, error) {
-	// Get settlement to check if user is target
-	settlement, err := i.settlementRepo.GetByID(ctx, settlementID)
-	if err != nil {
-		return nil, err
-	}
-
-	if !isTargetUser(userID, settlement.TargetUserIDs) {
-		return nil, domain.ErrForbidden
-	}
-
-	// Get or create payment
+	// Get payment record for this user
 	payment, err := i.paymentRepo.GetBySettlementAndUser(ctx, settlementID, userID)
 	if err != nil {
 		return nil, err
@@ -121,4 +111,22 @@ func (i *SettlementInteractor) ReportPayment(ctx context.Context, settlementID, 
 	}
 
 	return payment, nil
+}
+
+// UpdateSettlement updates a settlement's title, amount, and dueAt.
+func (i *SettlementInteractor) UpdateSettlement(ctx context.Context, settlementID, title string, amount int, dueAt time.Time) (*domain.Settlement, error) {
+	settlement, err := i.settlementRepo.GetByID(ctx, settlementID)
+	if err != nil {
+		return nil, err
+	}
+
+	settlement.Title = title
+	settlement.Amount = amount
+	settlement.DueAt = dueAt
+
+	if err := i.settlementRepo.Update(ctx, settlement); err != nil {
+		return nil, err
+	}
+
+	return settlement, nil
 }

@@ -12,21 +12,29 @@ interface SettlementPanelProps {
 
 export default function SettlementPanel({ eventId }: SettlementPanelProps) {
     const [settlements, setSettlements] = useState<Settlement[]>([]);
+    const [paidSettlementIds, setPaidSettlementIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchSettlements = async () => {
+        const fetchData = async () => {
             try {
-                const data = await api.getEventSettlements(eventId);
-                setSettlements(data || []);
+                const [eventSettlements, mySettlements] = await Promise.all([
+                    api.getEventSettlements(eventId),
+                    api.getMySettlements()
+                ]);
+                setSettlements(eventSettlements || []);
+
+                // Extract IDs of paid settlements
+                const paidIds = new Set(mySettlements.paid.map(item => item.settlement.id));
+                setPaidSettlementIds(paidIds);
             } catch (error) {
-                console.error('Failed to fetch settlements:', error);
+                console.error('Failed to fetch data:', error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchSettlements();
+        fetchData();
     }, [eventId]);
 
     if (settlements.length === 0 && !isLoading) {
@@ -45,17 +53,26 @@ export default function SettlementPanel({ eventId }: SettlementPanelProps) {
     return (
         <div className="space-y-5">
             {settlements.map((settlement) => (
-                <SettlementCard key={settlement.id} settlement={settlement} />
+                <SettlementCard
+                    key={settlement.id}
+                    settlement={settlement}
+                    initialIsPaid={paidSettlementIds.has(settlement.id)}
+                />
             ))}
         </div>
     );
 }
 
-function SettlementCard({ settlement }: { settlement: Settlement }) {
+function SettlementCard({ settlement, initialIsPaid }: { settlement: Settlement; initialIsPaid: boolean }) {
     const [activeTab, setActiveTab] = useState<PaymentMethod>('BANK');
     const [isReporting, setIsReporting] = useState(false);
-    const [isReported, setIsReported] = useState(false);
+    const [isReported, setIsReported] = useState(initialIsPaid);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Update local state if prop changes (e.g. re-fetch)
+    useEffect(() => {
+        setIsReported(initialIsPaid);
+    }, [initialIsPaid]);
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);

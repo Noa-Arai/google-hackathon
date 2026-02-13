@@ -65,3 +65,26 @@ type ChatRequest struct {
 	CircleID string `json:"circleId"`
 	Message  string `json:"message"`
 }
+
+// UpdateUserRequest represents request to update user profile.
+type UpdateUserRequest struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatarUrl"`
+}
+
+// UpdateEventRequest represents request to update an event.
+type UpdateEventRequest struct {
+	Title             string    `json:"title"`
+	StartAt           time.Time `json:"startAt"`
+	Location          string    `json:"location"`
+	CoverImageURL     string    `json:"coverImageUrl"`
+	RSVPTargetUserIDs []string  `json:"rsvpTargetUserIds"`
+}
+
+// UpdateSettlementRequest represents request to update a settlement.
+type UpdateSettlementRequest struct {
+	Title  string    `json:"title"`
+	Amount int       `json:"amount"`
+	DueAt  time.Time `json:"dueAt"`
+}

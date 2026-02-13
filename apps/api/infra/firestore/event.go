@@ -70,3 +70,15 @@ func (r *EventRepository) GetByCircle(ctx context.Context, circleID string) ([]*
 	}
 	return events, nil
 }
+
+// Update updates an event.
+func (r *EventRepository) Update(ctx context.Context, e *domain.Event) error {
+	_, err := r.client.Collection("events").Doc(e.ID).Set(ctx, e)
+	return err
+}
+
+// Delete deletes an event.
+func (r *EventRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.client.Collection("events").Doc(id).Delete(ctx)
+	return err
+}

@@ -10,7 +10,9 @@ import (
 
 // UserRepository defines user data access interface.
 type UserRepository interface {
+	Create(ctx context.Context, u *domain.User) error
 	GetByID(ctx context.Context, id string) (*domain.User, error)
+	Update(ctx context.Context, u *domain.User) error
 }
 
 // CircleRepository defines circle data access interface.
@@ -31,6 +33,8 @@ type EventRepository interface {
 	Create(ctx context.Context, e *domain.Event) error
 	GetByID(ctx context.Context, id string) (*domain.Event, error)
 	GetByCircle(ctx context.Context, circleID string) ([]*domain.Event, error)
+	Update(ctx context.Context, e *domain.Event) error
+	Delete(ctx context.Context, id string) error
 }
 
 // AnnouncementRepository defines announcement data access interface.
@@ -44,6 +48,7 @@ type AnnouncementRepository interface {
 type RSVPRepository interface {
 	Upsert(ctx context.Context, r *domain.RSVP) error
 	GetByEventAndUser(ctx context.Context, eventID, userID string) (*domain.RSVP, error)
+	GetByEvent(ctx context.Context, eventID string) ([]*domain.RSVP, error)
 }
 
 // SettlementRepository defines settlement data access interface.
@@ -51,6 +56,7 @@ type SettlementRepository interface {
 	Create(ctx context.Context, s *domain.Settlement) error
 	GetByID(ctx context.Context, id string) (*domain.Settlement, error)
 	GetByEvent(ctx context.Context, eventID string) ([]*domain.Settlement, error)
+	Update(ctx context.Context, s *domain.Settlement) error
 }
 
 // PaymentRepository defines payment data access interface.
@@ -59,9 +65,10 @@ type PaymentRepository interface {
 	GetBySettlementAndUser(ctx context.Context, settlementID, userID string) (*domain.Payment, error)
 	GetByUser(ctx context.Context, userID string) ([]*domain.Payment, error)
 	Update(ctx context.Context, p *domain.Payment) error
+	DeleteBySettlementAndUser(ctx context.Context, settlementID, userID string) error
 }
 
 // AIService defines AI chat service interface.
 type AIService interface {
-	GenerateResponse(ctx context.Context, message string, announcements []*domain.Announcement) (*domain.ChatResponse, error)
+	GenerateResponse(ctx context.Context, message string, announcements []*domain.Announcement, events []*domain.Event) (*domain.ChatResponse, error)
 }

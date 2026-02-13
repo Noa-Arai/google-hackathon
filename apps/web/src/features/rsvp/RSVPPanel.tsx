@@ -44,10 +44,25 @@ export default function RSVPPanel({ eventId }: RSVPPanelProps) {
         setMessage(null);
 
         try {
+            console.log('Submitting RSVP:', { eventId, selectedStatus, note });
             await api.submitRSVP(eventId, selectedStatus, note);
             setMessage({ type: 'success', text: '出欠を登録しました！' });
-        } catch (error) {
-            setMessage({ type: 'error', text: '登録に失敗しました（APIを確認してください）' });
+
+            // Update local state
+            const rsvp: RSVP = {
+                id: currentRSVP?.id || 'temp-id',
+                eventId,
+                userId: 'current-user', // This will be refreshed on reload
+                status: selectedStatus,
+                note,
+                updatedAt: new Date().toISOString()
+            };
+            setCurrentRSVP(rsvp);
+
+        } catch (error: any) {
+            console.error('RSVP Submit Error:', error);
+            const errorMsg = error.message || '不明なエラーが発生しました';
+            setMessage({ type: 'error', text: `登録に失敗しました: ${errorMsg}` });
         } finally {
             setIsSubmitting(false);
         }

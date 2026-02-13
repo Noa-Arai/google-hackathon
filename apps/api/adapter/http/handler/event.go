@@ -71,3 +71,41 @@ func (h *EventHandler) GetByCircle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
 }
+
+// Update handles PUT /events/{eventId}.
+func (h *EventHandler) Update(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("eventId")
+	var req dto.UpdateEventRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	event, err := h.interactor.UpdateEvent(
+		r.Context(),
+		eventID,
+		req.Title,
+		req.StartAt,
+		req.Location,
+		req.CoverImageURL,
+		req.RSVPTargetUserIDs,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(event)
+}
+
+// Delete handles DELETE /events/{eventId}.
+func (h *EventHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("eventId")
+	if err := h.interactor.DeleteEvent(r.Context(), eventID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

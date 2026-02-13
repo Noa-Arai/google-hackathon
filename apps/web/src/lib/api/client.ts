@@ -11,11 +11,14 @@ interface RequestOptions {
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, userId = DEFAULT_USER_ID } = options;
+    const { method = 'GET', body, userId } = options;
+
+    // Get current user ID from localStorage if not provided
+    const currentUserId = userId || (typeof window !== 'undefined' ? localStorage.getItem('current_user_id') : null) || DEFAULT_USER_ID;
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-User-Id': userId,
+        'X-User-Id': currentUserId,
     };
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -54,6 +57,26 @@ export const api = {
     createEvent: (data: CreateEventRequest) =>
         apiRequest<Event>('/events', { method: 'POST', body: data }),
 
+    getEventsByUser: async (circleId: string, userId: string): Promise<Event[]> => {
+        const events = await api.getEvents(circleId);
+        // This filtering should ideally happen on backend, but for MVP we do it here
+        // We need to fetch RSVPs for each event to check status
+        // Optimally: GET /circles/:id/events?userId=:userId&status=GO,LATE,EARLY
+
+        const userEvents: Event[] = [];
+        for (const event of events) {
+            try {
+                const rsvp = await apiRequest<RSVP | null>(`/events/${event.id}/rsvp/me`, { userId });
+                if (rsvp && ['GO', 'LATE', 'EARLY'].includes(rsvp.status)) {
+                    userEvents.push(event);
+                }
+            } catch (e) {
+                // Ignore errors (e.g. no RSVP found)
+            }
+        }
+        return userEvents;
+    },
+
     // Announcements
     getAnnouncements: (circleId: string, limit = 10) =>
         apiRequest<Announcement[]>(`/circles/${circleId}/announcements?limit=${limit}`),
@@ -74,6 +97,9 @@ export const api = {
     getMyRSVP: (eventId: string) =>
         apiRequest<RSVP | null>(`/events/${eventId}/rsvp/me`),
 
+    getEventRSVPs: (eventId: string) =>
+        apiRequest<RSVP[]>(`/events/${eventId}/rsvps`),
+
     // Settlements
     getEventSettlements: (eventId: string) =>
         apiRequest<Settlement[]>(`/events/${eventId}/settlements`),
@@ -90,6 +116,24 @@ export const api = {
     // AI Chat
     chat: (circleId: string, message: string) =>
         apiRequest<ChatResponse>('/ai/chat', { method: 'POST', body: { circleId, message } }),
+
+    // User
+    updateUser: (id: string, name: string, avatarUrl: string) =>
+        apiRequest<User>('/users', { method: 'POST', body: { id, name, avatarUrl } }),
+
+    getUser: (id: string) =>
+        apiRequest<User>(`/users/${id}`),
+
+    // Event Edit/Delete
+    updateEvent: (eventId: string, data: UpdateEventRequest) =>
+        apiRequest<Event>(`/events/${eventId}`, { method: 'PUT', body: data }),
+
+    deleteEvent: (eventId: string) =>
+        apiRequest<void>(`/events/${eventId}`, { method: 'DELETE' }),
+
+    // Settlement Edit
+    updateSettlement: (settlementId: string, data: { title: string; amount: number; dueAt: string }) =>
+        apiRequest<Settlement>(`/settlements/${settlementId}`, { method: 'PUT', body: data }),
 };
 
 // Request Types
@@ -101,6 +145,14 @@ export interface CreateEventRequest {
     coverImageUrl?: string;
     rsvpTargetUserIds: string[];
     createdBy: string;
+}
+
+export interface UpdateEventRequest {
+    title: string;
+    startAt: string;
+    location?: string;
+    coverImageUrl?: string;
+    rsvpTargetUserIds: string[];
 }
 
 export interface CreateAnnouncementRequest {
@@ -123,6 +175,14 @@ export interface CreateSettlementRequest {
 }
 
 // Types
+export interface User {
+    id: string;
+    name: string;
+    avatarUrl: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 export interface Circle {
     id: string;
     name: string;

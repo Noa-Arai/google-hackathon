@@ -15,6 +15,7 @@ func Setup(
 	rsvpHandler *handler.RSVPHandler,
 	settlementHandler *handler.SettlementHandler,
 	chatHandler *handler.ChatHandler,
+	userHandler *handler.UserHandler,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -34,6 +35,10 @@ func Setup(
 		w.Write([]byte("OK"))
 	})
 
+	// User routes
+	mux.HandleFunc("POST /users", userHandler.CreateOrUpdate)
+	mux.HandleFunc("GET /users/{userId}", userHandler.Get)
+
 	// Circle routes
 	mux.HandleFunc("POST /circles", circleHandler.Create)
 	mux.HandleFunc("GET /circles/{circleId}", circleHandler.Get)
@@ -45,9 +50,12 @@ func Setup(
 	// Event routes
 	mux.HandleFunc("POST /events", eventHandler.Create)
 	mux.HandleFunc("GET /events/{eventId}", eventHandler.Get)
+	mux.HandleFunc("PUT /events/{eventId}", eventHandler.Update)
+	mux.HandleFunc("DELETE /events/{eventId}", eventHandler.Delete)
 	mux.HandleFunc("GET /events/{eventId}/announcements", announcementHandler.GetByEvent)
 	mux.HandleFunc("POST /events/{eventId}/rsvp", rsvpHandler.Submit)
 	mux.HandleFunc("GET /events/{eventId}/rsvp/me", rsvpHandler.GetMy)
+	mux.HandleFunc("GET /events/{eventId}/rsvps", rsvpHandler.GetByEvent)
 	mux.HandleFunc("GET /events/{eventId}/settlements", settlementHandler.GetByEvent)
 
 	// Announcement routes
@@ -57,6 +65,7 @@ func Setup(
 	mux.HandleFunc("POST /settlements", settlementHandler.Create)
 	mux.HandleFunc("GET /settlements/me", settlementHandler.GetMy)
 	mux.HandleFunc("POST /settlements/{id}/report", settlementHandler.ReportPayment)
+	mux.HandleFunc("PUT /settlements/{id}", settlementHandler.Update)
 
 	// AI Chat routes
 	mux.HandleFunc("POST /ai/chat", chatHandler.Ask)

@@ -11,7 +11,11 @@ interface Message {
     references?: ChatReference[];
 }
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+    circleId?: string;
+}
+
+export default function ChatPanel({ circleId = DEFAULT_CIRCLE_ID }: ChatPanelProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -41,7 +45,7 @@ export default function ChatPanel() {
         setIsLoading(true);
 
         try {
-            const response: ChatResponse = await api.chat(DEFAULT_CIRCLE_ID, question);
+            const response: ChatResponse = await api.chat(circleId, question);
             setMessages((prev) => [
                 ...prev,
                 {
@@ -70,8 +74,8 @@ export default function ChatPanel() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`fixed bottom-8 right-8 w-14 h-14 rounded-full flex items-center justify-center z-50 transition-all duration-300 ${isOpen
-                        ? 'bg-[#2a3548] text-white'
-                        : 'bg-[#3b82f6] text-white hover:shadow-[0_0_30px_rgba(59,130,246,0.4)]'
+                    ? 'bg-[#2a3548] text-white'
+                    : 'bg-[#3b82f6] text-white hover:shadow-[0_0_30px_rgba(59,130,246,0.4)]'
                     }`}
             >
                 <span className="text-xl">{isOpen ? '✕' : '💬'}</span>
@@ -105,8 +109,8 @@ export default function ChatPanel() {
                         >
                             <div
                                 className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                        ? 'bg-[#3b82f6] text-white rounded-br-md'
-                                        : 'bg-[#151d2e] text-white rounded-bl-md border border-[#2a3548]'
+                                    ? 'bg-[#3b82f6] text-white rounded-br-md'
+                                    : 'bg-[#151d2e] text-white rounded-bl-md border border-[#2a3548]'
                                     }`}
                             >
                                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
