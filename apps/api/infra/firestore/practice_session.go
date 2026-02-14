@@ -2,6 +2,7 @@ package firestore
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -43,7 +44,6 @@ func (r *PracticeSessionRepository) GetByID(ctx context.Context, id string) (*do
 func (r *PracticeSessionRepository) GetBySeries(ctx context.Context, seriesID string) ([]*domain.PracticeSession, error) {
 	iter := r.client.Collection("practice_sessions").
 		Where("seriesId", "==", seriesID).
-		OrderBy("date", firestore.Asc).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -63,6 +63,10 @@ func (r *PracticeSessionRepository) GetBySeries(ctx context.Context, seriesID st
 		s.ID = doc.Ref.ID
 		sessions = append(sessions, &s)
 	}
+	// Sort by date in Go instead of Firestore OrderBy (avoids needing composite index)
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].Date.Before(sessions[j].Date)
+	})
 	return sessions, nil
 }
 
