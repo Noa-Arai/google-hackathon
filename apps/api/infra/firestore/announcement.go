@@ -2,6 +2,7 @@ package firestore
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -48,7 +49,6 @@ func (r *AnnouncementRepository) GetByID(ctx context.Context, id string) (*domai
 func (r *AnnouncementRepository) GetByEvent(ctx context.Context, eventID string) ([]*domain.Announcement, error) {
 	iter := r.client.Collection("announcements").
 		Where("eventId", "==", eventID).
-		OrderBy("createdAt", firestore.Desc).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -68,6 +68,9 @@ func (r *AnnouncementRepository) GetByEvent(ctx context.Context, eventID string)
 		a.ID = doc.Ref.ID
 		announcements = append(announcements, &a)
 	}
+	sort.Slice(announcements, func(i, j int) bool {
+		return announcements[i].CreatedAt.After(announcements[j].CreatedAt)
+	})
 	return announcements, nil
 }
 
@@ -75,8 +78,6 @@ func (r *AnnouncementRepository) GetByEvent(ctx context.Context, eventID string)
 func (r *AnnouncementRepository) GetByCircle(ctx context.Context, circleID string, limit int) ([]*domain.Announcement, error) {
 	iter := r.client.Collection("announcements").
 		Where("circleId", "==", circleID).
-		OrderBy("createdAt", firestore.Desc).
-		Limit(limit).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -95,6 +96,12 @@ func (r *AnnouncementRepository) GetByCircle(ctx context.Context, circleID strin
 		}
 		a.ID = doc.Ref.ID
 		announcements = append(announcements, &a)
+	}
+	sort.Slice(announcements, func(i, j int) bool {
+		return announcements[i].CreatedAt.After(announcements[j].CreatedAt)
+	})
+	if limit > 0 && len(announcements) > limit {
+		announcements = announcements[:limit]
 	}
 	return announcements, nil
 }
