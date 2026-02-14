@@ -226,10 +226,10 @@ export default function PracticesPage() {
                         全て
                     </button>
                     {rootCategories.map(cat => (
-                        <div key={cat.id} className="flex items-center gap-1 shrink-0">
+                        <div key={cat.id} className="flex items-center gap-0.5 shrink-0">
                             <button
                                 onClick={() => setSelectedCategory(cat.id)}
-                                className={`text-xs px-3 py-1.5 rounded-full transition-colors ${selectedCategory === cat.id
+                                className={`text-xs px-3 py-1.5 rounded-l-full transition-colors ${selectedCategory === cat.id
                                     ? 'bg-white text-black'
                                     : 'bg-white/[0.06] text-white/50 hover:text-white/80'
                                     }`}
@@ -237,11 +237,11 @@ export default function PracticesPage() {
                                 {cat.name}
                             </button>
                             <button
-                                onClick={() => handleDeleteCategory(cat.id)}
-                                className="text-white/20 hover:text-red-400 text-xs transition-colors p-0.5"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
+                                className="text-xs px-2 py-1.5 rounded-r-full bg-red-500/20 text-red-400 hover:bg-red-500/40 hover:text-red-300 transition-colors border-l border-red-500/20"
                                 title="カテゴリを削除"
                             >
-                                ×
+                                ✕
                             </button>
                         </div>
                     ))}

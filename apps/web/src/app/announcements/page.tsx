@@ -14,10 +14,11 @@ export default function AnnouncementsPage() {
     const load = async () => {
         try {
             const data = await api.getAnnouncements(DEFAULT_CIRCLE_ID);
+            console.log('Announcements loaded:', data?.length, data);
             setAnnouncements(data || []);
         } catch (err) {
             setError('APIサーバーに接続できません');
-            console.error(err);
+            console.error('Announcements load error:', err);
         } finally {
             setIsLoading(false);
         }
