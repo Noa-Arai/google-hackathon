@@ -20,14 +20,9 @@ function getMockResponse<T>(endpoint: string, options: RequestOptions = {}): T |
 
     const { method = 'GET' } = options;
 
-    // For non-GET requests in mock mode, return a simulated success
+    // NEVER intercept mutations - always let them go to the real API
     if (method !== 'GET') {
-        // Simulate POST/PUT/DELETE
-        if (endpoint.includes('/rsvp')) {
-            const body = options.body as { status?: string; note?: string } | undefined;
-            return { id: 'mock-new', eventId: 'mock', userId: DEFAULT_USER_ID, status: body?.status || 'GO', note: body?.note || '', updatedAt: new Date().toISOString() } as T;
-        }
-        return {} as T;
+        return undefined;
     }
 
     // GET requests - match endpoint patterns
@@ -108,6 +103,11 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     }
 
     return JSON.parse(text);
+}
+
+// Log API base URL on load for debugging
+if (typeof window !== 'undefined') {
+    console.log('[API] Base URL:', API_BASE_URL, '| Mock mode:', isMockMode());
 }
 
 // API functions
@@ -256,8 +256,8 @@ const realApi = {
         apiRequest<void>(`/practice-series/${id}`, { method: 'DELETE' }),
 };
 
-// Export api based on mock mode
-export const api = process.env.NEXT_PUBLIC_MOCK_MODE === 'true' ? mockApi : realApi;
+// Always use realApi - mock responses are handled inside apiRequest for GET only
+export const api = realApi;
 
 export * from './types';
 
