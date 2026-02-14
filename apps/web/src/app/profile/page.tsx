@@ -79,6 +79,12 @@ export default function ProfilePage() {
                 const now = new Date();
                 for (const event of events) {
                     if (new Date(event.startAt) < now) continue; // Skip past events
+
+                    // Check if target user
+                    if (event.rsvpTargetUserIds && event.rsvpTargetUserIds.length > 0) {
+                        if (!event.rsvpTargetUserIds.includes(currentUser.id)) continue;
+                    }
+
                     try {
                         const rsvp = await api.getMyRSVP(event.id);
                         if (!rsvp) {
@@ -101,7 +107,7 @@ export default function ProfilePage() {
                     }
                 }
 
-                // 3. Practice RSVPs
+                // 3. Practice RSVPs (Already good? Practice series usually don't have explicit target users in this MVP, but we can add if needed. Assuming open to all.)
                 const seriesList = await api.getPracticeSeries(DEFAULT_CIRCLE_ID);
                 for (const series of seriesList) {
                     try {
@@ -129,24 +135,29 @@ export default function ProfilePage() {
 
                 // 4. Unpaid Settlements
                 for (const item of (mySettlements.unpaid || [])) {
-                    // Determine link based on whether it is linked to event or practice
-                    // Current Settlement entity has eventId (optional) 
-                    // If eventId exists, maybe link to event? 
-                    // For practice payments, we might not have a direct link in current model except via description or extending Settlement entity.
-                    // For now link to /payments page or event detail if possible.
-                    // The AlertItem link field handles this.
+                    // Check attendance if linked to event
+                    if (item.settlement.eventId) {
+                        try {
+                            const rsvp = await api.getMyRSVP(item.settlement.eventId);
+                            // Only show alert if attending (GO, LATE, EARLY)
+                            if (!rsvp || !['GO', 'LATE', 'EARLY'].includes(rsvp.status)) {
+                                continue;
+                            }
+                        } catch (e) {
+                            // If failed to check RSVP, maybe safe to show alert? Or skip?
+                            // Safest is to show alert, but user requested "if scheduled to attend".
+                            // If no RSVP found, they are not scheduled to attend.
+                            continue;
+                        }
+                    }
 
-                    // Assuming settlement has circleId/eventId.
-                    // If eventId matches an event, go there.
-                    // But we have /payments page which lists settlements.
-                    // User asked for "Unpaid Alerts" on Right side.
                     alertItems.push({
                         type: 'payment',
                         eventId: item.settlement.id,
                         eventTitle: item.settlement.title,
                         settlementTitle: item.settlement.title,
                         amount: item.settlement.amount,
-                        link: `/payments` // Simple redirect to payments page
+                        link: `/payments`
                     });
                 }
 
@@ -242,8 +253,8 @@ export default function ProfilePage() {
                                             }`}
                                     >
                                         <div className={`w-6 text-center font-bold text-sm ${index === 0 ? 'text-yellow-400' :
-                                                index === 1 ? 'text-gray-300' :
-                                                    index === 2 ? 'text-amber-600' : 'text-white/20'
+                                            index === 1 ? 'text-gray-300' :
+                                                index === 2 ? 'text-amber-600' : 'text-white/20'
                                             }`}>
                                             {index + 1}
                                         </div>

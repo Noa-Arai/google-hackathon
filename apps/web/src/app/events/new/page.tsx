@@ -1,23 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { DEFAULT_CIRCLE_ID, DEFAULT_USER_ID } from '@/lib/constants';
 import Link from 'next/link';
+import { User } from '@/lib/api/types';
 
 export default function CreateEventPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [members, setMembers] = useState<User[]>([]);
 
-    const [eventType, setEventType] = useState<'practice' | 'special'>('practice');
     const [titleInput, setTitleInput] = useState('');
     const [formData, setFormData] = useState({
         startAt: '',
         location: '',
         coverImageUrl: '',
     });
+    const [targetUserIds, setTargetUserIds] = useState<string[]>([]);
+    const [isAllTarget, setIsAllTarget] = useState(true);
+
+    useEffect(() => {
+        const fetchMembers = async () => {
+            try {
+                const data = await api.getMembers(DEFAULT_CIRCLE_ID);
+                setMembers(data);
+                // Default all selected
+                setTargetUserIds(data.map(u => u.id));
+            } catch (e) {
+                console.error('Failed to fetch members', e);
+            }
+        };
+        fetchMembers();
+    }, []);
+
+    const handleToggleUser = (userId: string) => {
+        if (targetUserIds.includes(userId)) {
+            setTargetUserIds(targetUserIds.filter(id => id !== userId));
+            setIsAllTarget(false);
+        } else {
+            const newTargets = [...targetUserIds, userId];
+            setTargetUserIds(newTargets);
+            if (newTargets.length === members.length) setIsAllTarget(true);
+        }
+    };
+
+    const handleToggleAll = () => {
+        if (isAllTarget) {
+            setTargetUserIds([]);
+            setIsAllTarget(false);
+        } else {
+            setTargetUserIds(members.map(u => u.id));
+            setIsAllTarget(true);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,19 +67,14 @@ export default function CreateEventPage() {
         setIsSubmitting(true);
         setError(null);
 
-        // Auto-prefix title based on type
-        const finalTitle = eventType === 'practice'
-            ? `【通常練習】${titleInput}`
-            : `【特別イベント】${titleInput}`;
-
         try {
             const result = await api.createEvent({
                 circleId: DEFAULT_CIRCLE_ID,
-                title: finalTitle,
+                title: titleInput,
                 startAt: new Date(formData.startAt).toISOString(),
                 location: formData.location || undefined,
                 coverImageUrl: formData.coverImageUrl || undefined,
-                rsvpTargetUserIds: [DEFAULT_USER_ID],
+                rsvpTargetUserIds: targetUserIds,
                 createdBy: DEFAULT_USER_ID,
             });
             router.push(`/events/${result.id}`);
@@ -54,7 +87,7 @@ export default function CreateEventPage() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto pb-20">
             {/* Back Link */}
             <Link href="/events" className="text-[#8b98b0] hover:text-[#3b82f6] inline-flex items-center gap-2 transition-colors animate-slide-in mb-8">
                 <span>←</span> イベント一覧に戻る
@@ -68,38 +101,7 @@ export default function CreateEventPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="card p-8 animate-fade-in space-y-6">
-                {/* Event Type */}
-                <div>
-                    <label className="block text-sm font-medium text-[#8b98b0] mb-3">
-                        イベント種別 <span className="text-[#ef4444]">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            type="button"
-                            onClick={() => setEventType('practice')}
-                            className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${eventType === 'practice'
-                                    ? 'bg-[#10b981]/20 border-[#10b981] text-[#10b981]'
-                                    : 'bg-[#0a0f1c] border-[#2a3548] text-[#8b98b0] hover:border-[#3b82f6]'
-                                }`}
-                        >
-                            <span className="text-2xl">🎾</span>
-                            <span className="font-bold">通常練習</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setEventType('special')}
-                            className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${eventType === 'special'
-                                    ? 'bg-[#8b5cf6]/20 border-[#8b5cf6] text-[#8b5cf6]'
-                                    : 'bg-[#0a0f1c] border-[#2a3548] text-[#8b98b0] hover:border-[#3b82f6]'
-                                }`}
-                        >
-                            <span className="text-2xl">🎉</span>
-                            <span className="font-bold">特別イベント</span>
-                        </button>
-                    </div>
-                </div>
-
+            <form onSubmit={handleSubmit} className="card p-8 animate-fade-in space-y-8">
                 {/* Title */}
                 <div>
                     <label className="block text-sm font-medium text-[#8b98b0] mb-2">
@@ -141,6 +143,51 @@ export default function CreateEventPage() {
                     />
                 </div>
 
+                {/* RSVP Targets */}
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-medium text-[#8b98b0]">
+                            出欠登録の対象者
+                        </label>
+                        <button
+                            type="button"
+                            onClick={handleToggleAll}
+                            className="text-xs text-[#3b82f6] hover:text-[#2563eb]"
+                        >
+                            {isAllTarget ? '全解除' : '全選択'}
+                        </button>
+                    </div>
+                    <div className="bg-[#0a0f1c] border border-[#2a3548] rounded-xl p-4 grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                        {members.map(member => (
+                            <label key={member.id} className="flex items-center gap-3 p-2 hover:bg-white/[0.02] rounded-lg cursor-pointer transition-colors">
+                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${targetUserIds.includes(member.id)
+                                        ? 'bg-[#3b82f6] border-[#3b82f6]'
+                                        : 'border-[#2a3548]'
+                                    }`}>
+                                    {targetUserIds.includes(member.id) && (
+                                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    )}
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={targetUserIds.includes(member.id)}
+                                    onChange={() => handleToggleUser(member.id)}
+                                />
+                                <div className="flex items-center gap-2">
+                                    <img src={member.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                                    <span className="text-sm text-white/80">{member.name}</span>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
+                    <p className="text-xs text-[#5a6580] mt-2">
+                        選択されたメンバーのホーム画面に「出欠未登録」アラートが表示されます。
+                    </p>
+                </div>
+
                 {/* Cover Image URL */}
                 <div>
                     <label className="block text-sm font-medium text-[#8b98b0] mb-2">
@@ -153,9 +200,6 @@ export default function CreateEventPage() {
                         placeholder="https://example.com/image.jpg"
                         className="w-full px-5 py-4 rounded-xl bg-[#0a0f1c] border border-[#2a3548] text-white placeholder-[#5a6580] focus:outline-none focus:border-[#3b82f6]"
                     />
-                    <p className="text-xs text-[#5a6580] mt-2">
-                        ヒント: <code>https://picsum.photos/seed/任意の文字/400/300</code> で適当な画像が使えます
-                    </p>
                 </div>
 
                 {/* Error */}

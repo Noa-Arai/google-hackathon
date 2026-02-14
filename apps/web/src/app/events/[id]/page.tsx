@@ -62,12 +62,18 @@ export default function EventDetailPage() {
         finally { setLoading(false); }
     };
 
+    const [rsvpSuccess, setRsvpSuccess] = useState(false);
+
     const handleRsvp = async (status: string) => {
         setRsvpSubmitting(true);
+        setRsvpSuccess(false);
         try {
             const result = await api.submitRSVP(eventId, status, rsvpNote);
             setMyRsvp(result);
             setRsvpNote('');
+            setRsvpSuccess(true);
+            setTimeout(() => setRsvpSuccess(false), 3000);
+
             setShowSettlements(['GO', 'LATE', 'EARLY'].includes(status));
             const allRsvpData = await api.getEventRSVPs(eventId).catch(() => []);
             setAllRsvps(allRsvpData || []);
@@ -143,6 +149,7 @@ export default function EventDetailPage() {
                 </div>
             </div>
 
+
             {/* RSVP */}
             <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 animate-fade-in" style={{ animationDelay: '50ms' }}>
                 <div className="flex items-center justify-between mb-3">
@@ -150,7 +157,16 @@ export default function EventDetailPage() {
                     <span className="text-[11px] text-white/25">出席 {goCount} · 欠席 {noCount}</span>
                 </div>
 
-                {myRsvp && (
+                {rsvpSuccess && (
+                    <div className="mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-xs flex items-center gap-2 animate-fade-in">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        出欠を更新しました
+                    </div>
+                )}
+
+                {myRsvp && !rsvpSuccess && (
                     <p className="text-xs text-white/30 mb-2">
                         現在: {rsvpOptions.find(b => b.status === myRsvp.status)?.label}
                     </p>

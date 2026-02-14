@@ -4,6 +4,7 @@ import {
     CreateEventRequest, CreateAnnouncementRequest, CreateSettlementRequest, CreatePracticeSeriesRequest,
     User, AnnouncementDetail
 } from './types';
+import { MOCK_USERS } from '@/lib/constants/users';
 
 const CURRENT_USER_ID = 'demo-user-1';
 
@@ -195,7 +196,9 @@ let rsvps: PracticeRSVP[] = [
 // Combine implementation
 export const mockApi = {
     // Circle
+    // Circle
     getCircle: async (id: string): Promise<Circle> => MOCK_CIRCLE,
+    getMembers: async (id: string): Promise<User[]> => MOCK_USERS,
 
     // Events
     getEvents: async () => MOCK_EVENTS,
@@ -244,7 +247,29 @@ export const mockApi = {
     },
 
     // RSVP (Event)
-    submitRSVP: async () => ({ status: 'GO' } as RSVP),
+    submitRSVP: async (eventId: string, status: string, note?: string) => {
+        const rsvp: RSVP = {
+            id: `mock-rsvp-${Date.now()}`,
+            eventId,
+            userId: CURRENT_USER_ID,
+            status: status as any,
+            note: note || '',
+            updatedAt: new Date().toISOString(),
+        };
+        // Update My RSVP
+        MOCK_RSVPS[eventId] = rsvp;
+
+        // Update All RSVPs list
+        if (!MOCK_ALL_RSVPS[eventId]) MOCK_ALL_RSVPS[eventId] = [];
+        const existingIdx = MOCK_ALL_RSVPS[eventId].findIndex(r => r.userId === CURRENT_USER_ID);
+        if (existingIdx >= 0) {
+            MOCK_ALL_RSVPS[eventId][existingIdx] = rsvp;
+        } else {
+            MOCK_ALL_RSVPS[eventId].push(rsvp);
+        }
+
+        return rsvp;
+    },
     getMyRSVP: async (eventId: string) => MOCK_RSVPS[eventId] || null,
     getEventRSVPs: async (eventId: string) => MOCK_ALL_RSVPS[eventId] || [],
 

@@ -115,6 +115,9 @@ const realApi = {
     getCircle: (circleId: string) =>
         apiRequest<Circle>(`/circles/${circleId}`),
 
+    getMembers: (circleId: string) =>
+        apiRequest<User[]>(`/circles/${circleId}/members`),
+
     // Events
     getEvents: (circleId: string) =>
         apiRequest<Event[]>(`/circles/${circleId}/events`),
