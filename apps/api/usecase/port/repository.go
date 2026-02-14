@@ -72,3 +72,35 @@ type PaymentRepository interface {
 type AIService interface {
 	GenerateResponse(ctx context.Context, message string, announcements []*domain.Announcement, events []*domain.Event) (*domain.ChatResponse, error)
 }
+
+// PracticeCategoryRepository defines practice category data access interface.
+type PracticeCategoryRepository interface {
+	Create(ctx context.Context, c *domain.PracticeCategory) error
+	GetByCircle(ctx context.Context, circleID string) ([]*domain.PracticeCategory, error)
+	Update(ctx context.Context, c *domain.PracticeCategory) error
+	Delete(ctx context.Context, id string) error
+}
+
+// PracticeSeriesRepository defines practice series data access interface.
+type PracticeSeriesRepository interface {
+	Create(ctx context.Context, s *domain.PracticeSeries) error
+	GetByID(ctx context.Context, id string) (*domain.PracticeSeries, error)
+	GetByCircle(ctx context.Context, circleID string) ([]*domain.PracticeSeries, error)
+	GetByCategory(ctx context.Context, categoryID string) ([]*domain.PracticeSeries, error)
+}
+
+// PracticeSessionRepository defines practice session data access interface.
+type PracticeSessionRepository interface {
+	Create(ctx context.Context, s *domain.PracticeSession) error
+	GetByID(ctx context.Context, id string) (*domain.PracticeSession, error)
+	GetBySeries(ctx context.Context, seriesID string) ([]*domain.PracticeSession, error)
+	Update(ctx context.Context, s *domain.PracticeSession) error
+}
+
+// PracticeRSVPRepository defines practice RSVP data access interface.
+type PracticeRSVPRepository interface {
+	Upsert(ctx context.Context, r *domain.PracticeRSVP) error
+	GetBySessionAndUser(ctx context.Context, sessionID, userID string) (*domain.PracticeRSVP, error)
+	GetBySession(ctx context.Context, sessionID string) ([]*domain.PracticeRSVP, error)
+	GetBySeriesAndUser(ctx context.Context, seriesID, userID string) ([]*domain.PracticeRSVP, error)
+}

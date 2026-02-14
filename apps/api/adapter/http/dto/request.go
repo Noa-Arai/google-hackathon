@@ -88,3 +88,44 @@ type UpdateSettlementRequest struct {
 	Amount int       `json:"amount"`
 	DueAt  time.Time `json:"dueAt"`
 }
+
+// CreatePracticeCategoryRequest represents request to create a practice category.
+type CreatePracticeCategoryRequest struct {
+	CircleID string `json:"circleId"`
+	Name     string `json:"name"`
+	ParentID string `json:"parentId"` // optional
+	Order    int    `json:"order"`
+}
+
+// CreatePracticeSeriesRequest represents request to create a practice series.
+type CreatePracticeSeriesRequest struct {
+	CircleID   string `json:"circleId"`
+	CategoryID string `json:"categoryId"`
+	Name       string `json:"name"`
+	DayOfWeek  int    `json:"dayOfWeek"`
+	StartTime  string `json:"startTime"`
+	Location   string `json:"location"`
+	Fee        int    `json:"fee"`
+}
+
+// CreatePracticeSessionRequest represents request to create a practice session.
+type CreatePracticeSessionRequest struct {
+	Date time.Time `json:"date"`
+	Note string    `json:"note"`
+}
+
+// PracticeRSVPRequest represents request to submit practice RSVP.
+type PracticeRSVPRequest struct {
+	Status string `json:"status"` // GO, NO
+}
+
+// BulkPracticeRSVPItem represents a single item in bulk RSVP.
+type BulkPracticeRSVPItem struct {
+	SessionID string `json:"sessionId"`
+	Status    string `json:"status"` // GO, NO
+}
+
+// BulkPracticeRSVPRequest represents request to bulk submit practice RSVPs.
+type BulkPracticeRSVPRequest struct {
+	RSVPs []BulkPracticeRSVPItem `json:"rsvps"`
+}

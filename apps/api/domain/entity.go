@@ -139,3 +139,55 @@ type ChatResponse struct {
 	AssistantMessage string          `json:"assistantMessage"`
 	References       []ChatReference `json:"references"`
 }
+
+// PracticeCategory represents a category node in the practice tree.
+type PracticeCategory struct {
+	ID        string    `json:"id" firestore:"id"`
+	CircleID  string    `json:"circleId" firestore:"circleId"`
+	Name      string    `json:"name" firestore:"name"`
+	ParentID  string    `json:"parentId" firestore:"parentId"` // empty = root
+	Order     int       `json:"order" firestore:"order"`
+	CreatedBy string    `json:"createdBy" firestore:"createdBy"`
+	CreatedAt time.Time `json:"createdAt" firestore:"createdAt"`
+}
+
+// PracticeSeries represents a recurring practice definition.
+type PracticeSeries struct {
+	ID         string    `json:"id" firestore:"id"`
+	CircleID   string    `json:"circleId" firestore:"circleId"`
+	CategoryID string    `json:"categoryId" firestore:"categoryId"`
+	Name       string    `json:"name" firestore:"name"`
+	DayOfWeek  int       `json:"dayOfWeek" firestore:"dayOfWeek"` // 0=Sun..6=Sat
+	StartTime  string    `json:"startTime" firestore:"startTime"` // "14:00"
+	Location   string    `json:"location" firestore:"location"`
+	Fee        int       `json:"fee" firestore:"fee"` // per session
+	CreatedBy  string    `json:"createdBy" firestore:"createdBy"`
+	CreatedAt  time.Time `json:"createdAt" firestore:"createdAt"`
+}
+
+// PracticeSession represents a single practice occurrence.
+type PracticeSession struct {
+	ID        string    `json:"id" firestore:"id"`
+	SeriesID  string    `json:"seriesId" firestore:"seriesId"`
+	Date      time.Time `json:"date" firestore:"date"`
+	Cancelled bool      `json:"cancelled" firestore:"cancelled"`
+	Note      string    `json:"note" firestore:"note"`
+	CreatedAt time.Time `json:"createdAt" firestore:"createdAt"`
+}
+
+// PracticeRSVPStatus represents practice attendance status.
+type PracticeRSVPStatus string
+
+const (
+	PracticeRSVPGo PracticeRSVPStatus = "GO"
+	PracticeRSVPNo PracticeRSVPStatus = "NO"
+)
+
+// PracticeRSVP represents a user's attendance for a practice session.
+type PracticeRSVP struct {
+	ID        string             `json:"id" firestore:"id"`
+	SessionID string             `json:"sessionId" firestore:"sessionId"`
+	UserID    string             `json:"userId" firestore:"userId"`
+	Status    PracticeRSVPStatus `json:"status" firestore:"status"`
+	UpdatedAt time.Time          `json:"updatedAt" firestore:"updatedAt"`
+}

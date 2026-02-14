@@ -54,6 +54,10 @@ func main() {
 	settlementRepo := firestoreRepo.NewSettlementRepository(firestoreClient)
 	paymentRepo := firestoreRepo.NewPaymentRepository(firestoreClient)
 	userRepo := firestoreRepo.NewUserRepository(firestoreClient)
+	practiceCategoryRepo := firestoreRepo.NewPracticeCategoryRepository(firestoreClient)
+	practiceSeriesRepo := firestoreRepo.NewPracticeSeriesRepository(firestoreClient)
+	practiceSessionRepo := firestoreRepo.NewPracticeSessionRepository(firestoreClient)
+	practiceRSVPRepo := firestoreRepo.NewPracticeRSVPRepository(firestoreClient)
 
 	// Initialize AI service (infra layer)
 	aiService := gemini.NewAIService(geminiAPIKey)
@@ -66,6 +70,7 @@ func main() {
 	settlementInteractor := usecase.NewSettlementInteractor(settlementRepo, paymentRepo)
 	chatInteractor := usecase.NewChatInteractor(announcementRepo, eventRepo, aiService)
 	userInteractor := usecase.NewUserInteractor(userRepo)
+	practiceUseCase := usecase.NewPracticeUseCase(practiceCategoryRepo, practiceSeriesRepo, practiceSessionRepo, practiceRSVPRepo, settlementRepo)
 
 	// Initialize handlers (adapter layer)
 	circleHandler := handler.NewCircleHandler(circleInteractor)
@@ -75,6 +80,7 @@ func main() {
 	settlementHandler := handler.NewSettlementHandler(settlementInteractor)
 	chatHandler := handler.NewChatHandler(chatInteractor)
 	userHandler := handler.NewUserHandler(userInteractor)
+	practiceHandler := handler.NewPracticeHandler(practiceUseCase)
 
 	// Setup router
 	mux := router.Setup(
@@ -85,6 +91,7 @@ func main() {
 		settlementHandler,
 		chatHandler,
 		userHandler,
+		practiceHandler,
 	)
 
 	// Setup CORS

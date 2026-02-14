@@ -39,6 +39,20 @@ export default function Header({ circleName = 'CIRCLE' }: HeaderProps) {
                             )}
                         </Link>
 
+                        {/* Practices */}
+                        <Link
+                            href="/practices"
+                            className={`relative text-sm font-medium tracking-wide transition-all ${pathname.startsWith('/practices')
+                                ? 'text-white'
+                                : 'text-[#8b98b0] hover:text-white'
+                                }`}
+                        >
+                            練習
+                            {pathname.startsWith('/practices') && (
+                                <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#3b82f6]" />
+                            )}
+                        </Link>
+
                         {/* Payments */}
                         <Link
                             href="/payments"

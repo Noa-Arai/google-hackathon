@@ -16,6 +16,7 @@ func Setup(
 	settlementHandler *handler.SettlementHandler,
 	chatHandler *handler.ChatHandler,
 	userHandler *handler.UserHandler,
+	practiceHandler *handler.PracticeHandler,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -46,6 +47,8 @@ func Setup(
 	mux.HandleFunc("GET /circles/{circleId}/members", circleHandler.GetMembers)
 	mux.HandleFunc("GET /circles/{circleId}/events", eventHandler.GetByCircle)
 	mux.HandleFunc("GET /circles/{circleId}/announcements", announcementHandler.GetByCircle)
+	mux.HandleFunc("GET /circles/{circleId}/practice-categories", practiceHandler.GetCategories)
+	mux.HandleFunc("GET /circles/{circleId}/practice-series", practiceHandler.GetSeriesByCircle)
 
 	// Event routes
 	mux.HandleFunc("POST /events", eventHandler.Create)
@@ -66,6 +69,17 @@ func Setup(
 	mux.HandleFunc("GET /settlements/me", settlementHandler.GetMy)
 	mux.HandleFunc("POST /settlements/{id}/report", settlementHandler.ReportPayment)
 	mux.HandleFunc("PUT /settlements/{id}", settlementHandler.Update)
+
+	// Practice routes
+	mux.HandleFunc("POST /practice-categories", practiceHandler.CreateCategory)
+	mux.HandleFunc("DELETE /practice-categories/{id}", practiceHandler.DeleteCategory)
+	mux.HandleFunc("POST /practice-series", practiceHandler.CreateSeries)
+	mux.HandleFunc("GET /practice-series/{id}", practiceHandler.GetSeriesDetail)
+	mux.HandleFunc("POST /practice-series/{id}/sessions", practiceHandler.CreateSession)
+	mux.HandleFunc("POST /practice-series/{id}/bulk-rsvp", practiceHandler.BulkRSVP)
+	mux.HandleFunc("POST /practice-series/{id}/settlements", practiceHandler.CreateSettlements) // Added
+	mux.HandleFunc("POST /practice-sessions/{id}/rsvp", practiceHandler.SubmitRSVP)
+	mux.HandleFunc("GET /practice-sessions/{id}/rsvps", practiceHandler.GetSessionRSVPs)
 
 	// AI Chat routes
 	mux.HandleFunc("POST /ai/chat", chatHandler.Ask)

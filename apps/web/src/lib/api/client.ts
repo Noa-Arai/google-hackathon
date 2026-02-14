@@ -1,4 +1,12 @@
 // API Client for Circle App
+import { mockApi } from './mock';
+import {
+    Circle, Event, Announcement, RSVP, Settlement, Payment, SettlementWithPayment,
+    ChatResponse, PracticeCategory, PracticeSeries, PracticeSession, PracticeRSVP, PracticeSeriesDetail,
+    CreateEventRequest, CreateAnnouncementRequest, CreateSettlementRequest, CreatePracticeSeriesRequest,
+    User, AnnouncementDetail, UpdateEventRequest, AnnouncementPayment
+} from './types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 // Default user ID for MVP
@@ -42,7 +50,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 }
 
 // API functions
-export const api = {
+const realApi = {
     // Circle
     getCircle: (circleId: string) =>
         apiRequest<Circle>(`/circles/${circleId}`),
@@ -134,148 +142,44 @@ export const api = {
     // Settlement Edit
     updateSettlement: (settlementId: string, data: { title: string; amount: number; dueAt: string }) =>
         apiRequest<Settlement>(`/settlements/${settlementId}`, { method: 'PUT', body: data }),
+
+    // Practice API
+    getPracticeCategories: (circleId: string) =>
+        apiRequest<PracticeCategory[]>(`/circles/${circleId}/practice-categories`),
+
+    createPracticeCategory: (data: { circleId: string; name: string; parentId?: string; order?: number }) =>
+        apiRequest<PracticeCategory>('/practice-categories', { method: 'POST', body: data }),
+
+    deletePracticeCategory: (id: string) =>
+        apiRequest<void>(`/practice-categories/${id}`, { method: 'DELETE' }),
+
+    getPracticeSeries: (circleId: string) =>
+        apiRequest<PracticeSeries[]>(`/circles/${circleId}/practice-series`),
+
+    createPracticeSeries: (data: CreatePracticeSeriesRequest) =>
+        apiRequest<PracticeSeries>('/practice-series', { method: 'POST', body: data }),
+
+    getPracticeSeriesDetail: (id: string) =>
+        apiRequest<PracticeSeriesDetail>(`/practice-series/${id}`),
+
+    createPracticeSession: (seriesId: string, data: { date: string; note?: string }) =>
+        apiRequest<PracticeSession>(`/practice-series/${seriesId}/sessions`, { method: 'POST', body: data }),
+
+    submitPracticeRSVP: (sessionId: string, status: string) =>
+        apiRequest<PracticeRSVP>(`/practice-sessions/${sessionId}/rsvp`, { method: 'POST', body: { status } }),
+
+    bulkPracticeRSVP: (seriesId: string, rsvps: { sessionId: string; status: string }[]) =>
+        apiRequest<{ status: string }>(`/practice-series/${seriesId}/bulk-rsvp`, { method: 'POST', body: { rsvps } }),
+
+    createPracticeSettlements: (seriesId: string, month: string) =>
+        apiRequest<{ status: string }>(`/practice-series/${seriesId}/settlements`, { method: 'POST', body: { month } }),
+
+    getSessionRSVPs: (sessionId: string) =>
+        apiRequest<PracticeRSVP[]>(`/practice-sessions/${sessionId}/rsvps`),
 };
 
-// Request Types
-export interface CreateEventRequest {
-    circleId: string;
-    title: string;
-    startAt: string;
-    location?: string;
-    coverImageUrl?: string;
-    rsvpTargetUserIds: string[];
-    createdBy: string;
-}
+// Export api based on mock mode
+export const api = process.env.NEXT_PUBLIC_MOCK_MODE === 'true' ? mockApi : realApi;
 
-export interface UpdateEventRequest {
-    title: string;
-    startAt: string;
-    location?: string;
-    coverImageUrl?: string;
-    rsvpTargetUserIds: string[];
-}
+export * from './types';
 
-export interface CreateAnnouncementRequest {
-    circleId: string;
-    eventId: string;
-    title: string;
-    body: string;
-    createdBy: string;
-}
-
-export interface CreateSettlementRequest {
-    circleId: string;
-    eventId: string;
-    title: string;
-    amount: number;
-    dueAt: string;
-    targetUserIds: string[];
-    bankInfo?: string;
-    paypayInfo?: string;
-}
-
-// Types
-export interface User {
-    id: string;
-    name: string;
-    avatarUrl: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-export interface Circle {
-    id: string;
-    name: string;
-    description: string;
-    logoUrl: string;
-    createdAt: string;
-}
-
-export interface Event {
-    id: string;
-    circleId: string;
-    title: string;
-    startAt: string;
-    location: string;
-    coverImageUrl: string;
-    rsvpTargetUserIds: string[];
-    createdBy: string;
-    createdAt: string;
-}
-
-export interface Announcement {
-    id: string;
-    circleId: string;
-    eventId: string;
-    title: string;
-    body: string;
-    imageUrl?: string;
-    targetUserIds?: string[];
-    createdBy: string;
-    createdAt: string;
-}
-
-export interface AnnouncementDetail {
-    announcement: Announcement;
-    attendance?: RSVP;
-    payments?: AnnouncementPayment[];
-    isTarget: boolean;
-}
-
-export interface AnnouncementPayment {
-    id: string;
-    announcementId: string;
-    userId: string;
-    amount: number;
-    description: string;
-    isPaid: boolean;
-    bankInfo: string;
-    paypayInfo: string;
-}
-
-export interface RSVP {
-    id: string;
-    eventId: string;
-    userId: string;
-    status: 'GO' | 'NO' | 'LATE' | 'EARLY';
-    note: string;
-    updatedAt: string;
-}
-
-export interface Settlement {
-    id: string;
-    circleId: string;
-    eventId: string;
-    title: string;
-    amount: number;
-    dueAt: string;
-    targetUserIds: string[];
-    bankInfo: string;
-    paypayInfo: string;
-    createdAt: string;
-}
-
-export interface Payment {
-    id: string;
-    settlementId: string;
-    userId: string;
-    status: 'UNPAID' | 'PAID_REPORTED' | 'CONFIRMED';
-    method: 'BANK' | 'PAYPAY';
-    note: string;
-    reportedAt: string;
-}
-
-export interface SettlementWithPayment {
-    settlement: Settlement;
-    payment: Payment | null;
-}
-
-export interface ChatReference {
-    title: string;
-    eventId?: string;
-}
-
-export interface ChatResponse {
-    assistantMessage: string;
-    references: ChatReference[];
-}
