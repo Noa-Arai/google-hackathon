@@ -2,6 +2,7 @@ package firestore
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -48,7 +49,6 @@ func (r *EventRepository) GetByID(ctx context.Context, id string) (*domain.Event
 func (r *EventRepository) GetByCircle(ctx context.Context, circleID string) ([]*domain.Event, error) {
 	iter := r.client.Collection("events").
 		Where("circleId", "==", circleID).
-		OrderBy("createdAt", firestore.Desc).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -68,6 +68,12 @@ func (r *EventRepository) GetByCircle(ctx context.Context, circleID string) ([]*
 		e.ID = doc.Ref.ID
 		events = append(events, &e)
 	}
+
+	// Sort by createdAt descending in-memory to avoid composite index requirement
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].CreatedAt.After(events[j].CreatedAt)
+	})
+
 	return events, nil
 }
 

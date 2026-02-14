@@ -2,6 +2,7 @@ package firestore
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -30,7 +31,6 @@ func (r *PracticeCategoryRepository) Create(ctx context.Context, c *domain.Pract
 func (r *PracticeCategoryRepository) GetByCircle(ctx context.Context, circleID string) ([]*domain.PracticeCategory, error) {
 	iter := r.client.Collection("practice_categories").
 		Where("circleId", "==", circleID).
-		OrderBy("order", firestore.Asc).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -50,6 +50,12 @@ func (r *PracticeCategoryRepository) GetByCircle(ctx context.Context, circleID s
 		c.ID = doc.Ref.ID
 		categories = append(categories, &c)
 	}
+
+	// Sort by order in-memory to avoid composite index requirement
+	sort.Slice(categories, func(i, j int) bool {
+		return categories[i].Order < categories[j].Order
+	})
+
 	return categories, nil
 }
 
