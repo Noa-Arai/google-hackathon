@@ -66,27 +66,31 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchAll = async () => {
             setLoading(true);
+            const alertItems: AlertItem[] = [];
+            let mySettlements: { unpaid: SettlementWithPayment[]; paid: SettlementWithPayment[] } = { unpaid: [], paid: [] };
+
+            // 1. Settlements & Stats
             try {
-                // 1. Settlements & Stats
-                const mySettlements = await api.getMySettlements();
+                mySettlements = await api.getMySettlements();
                 const calculatedStats = calculateStats(mySettlements.paid || []);
                 setStats(calculatedStats);
+            } catch (error) {
+                console.error('Failed to fetch settlements:', error);
+                setStats({ totalCoins: 0, level: 1, xp: 0, xpToNextLevel: 100, paidCount: 0 });
+            }
 
-                const alertItems: AlertItem[] = [];
-
-                // 2. Event RSVPs
+            // 2. Event RSVPs
+            try {
                 const events = await api.getEvents(DEFAULT_CIRCLE_ID);
                 const now = new Date();
                 for (const event of events) {
-                    if (new Date(event.startAt) < now) continue; // Skip past events
+                    if (new Date(event.startAt) < now) continue;
 
                     // Check if target user
                     if (event.rsvpTargetUserIds && event.rsvpTargetUserIds.length > 0) {
-                        // Verify targets contain valid user IDs (not corrupted Membership IDs)
                         const knownUserIds = MOCK_USERS.map(u => u.id);
                         const hasValidTargets = event.rsvpTargetUserIds.some(id => knownUserIds.includes(id));
                         if (hasValidTargets && !event.rsvpTargetUserIds.includes(currentUser.id)) continue;
-                        // If no valid targets found, treat as targeting all users (legacy data)
                     }
 
                     try {
@@ -110,17 +114,20 @@ export default function ProfilePage() {
                         });
                     }
                 }
+            } catch (error) {
+                console.error('Failed to fetch events:', error);
+            }
 
-                // 3. Practice RSVPs (Already good? Practice series usually don't have explicit target users in this MVP, but we can add if needed. Assuming open to all.)
+            // 3. Practice RSVPs
+            try {
                 const seriesList = await api.getPracticeSeries(DEFAULT_CIRCLE_ID);
+                const now = new Date();
                 for (const series of seriesList) {
                     try {
                         const detail = await api.getPracticeSeriesDetail(series.id);
-                        // Check sessions
                         for (const session of (detail.sessions || [])) {
                             if (session.cancelled) continue;
                             if (new Date(session.date) < now) continue;
-                            // Check if RSVP exists
                             const rsvp = detail.myRsvps?.find(r => r.sessionId === session.id);
                             if (!rsvp) {
                                 alertItems.push({
@@ -128,57 +135,53 @@ export default function ProfilePage() {
                                     eventId: session.id,
                                     eventTitle: `【練習】${series.name}`,
                                     subTitle: new Date(session.date).toLocaleDateString(),
-                                    link: `/practices/${series.id}` // Go to series detail
+                                    link: `/practices/${series.id}`
                                 });
                             }
                         }
                     } catch (e) {
-                        console.error('Failed to check practice rsvps', e);
+                        console.error('Failed to check practice rsvps:', e);
                     }
                 }
+            } catch (error) {
+                console.error('Failed to fetch practice series:', error);
+            }
 
-                // 4. Unpaid Settlements
-                for (const item of (mySettlements.unpaid || [])) {
-                    // Check attendance if linked to event
-                    if (item.settlement.eventId) {
-                        try {
-                            const rsvp = await api.getMyRSVP(item.settlement.eventId);
-                            // Only show alert if attending (GO, LATE, EARLY)
-                            if (!rsvp || !['GO', 'LATE', 'EARLY'].includes(rsvp.status)) {
-                                continue;
-                            }
-                        } catch (e) {
-                            // If failed to check RSVP, maybe safe to show alert? Or skip?
-                            // Safest is to show alert, but user requested "if scheduled to attend".
-                            // If no RSVP found, they are not scheduled to attend.
+            // 4. Unpaid Settlements
+            for (const item of (mySettlements.unpaid || [])) {
+                if (item.settlement.eventId) {
+                    try {
+                        const rsvp = await api.getMyRSVP(item.settlement.eventId);
+                        if (!rsvp || !['GO', 'LATE', 'EARLY'].includes(rsvp.status)) {
                             continue;
                         }
+                    } catch {
+                        continue;
                     }
-
-                    alertItems.push({
-                        type: 'payment',
-                        eventId: item.settlement.id,
-                        eventTitle: item.settlement.title,
-                        settlementTitle: item.settlement.title,
-                        amount: item.settlement.amount,
-                        link: `/payments`
-                    });
                 }
+                alertItems.push({
+                    type: 'payment',
+                    eventId: item.settlement.id,
+                    eventTitle: item.settlement.title,
+                    settlementTitle: item.settlement.title,
+                    amount: item.settlement.amount,
+                    link: `/payments`
+                });
+            }
 
-                setAlerts(alertItems);
+            setAlerts(alertItems);
 
-                // 5. Ranking (Mock)
-                const rankingData = MOCK_USERS.map((u) => ({
-                    name: u.name, avatarUrl: u.avatarUrl,
-                    coins: u.id === currentUser.id ? calculatedStats.totalCoins : Math.floor(Math.random() * 5000),
-                    level: u.id === currentUser.id ? calculatedStats.level : Math.floor(Math.random() * 5) + 1,
-                }));
-                rankingData.sort((a, b) => b.coins - a.coins);
-                setAllUsersStats(rankingData);
+            // 5. Ranking
+            const calcStats = stats || { totalCoins: 0, level: 1 };
+            const rankingData = MOCK_USERS.map((u) => ({
+                name: u.name, avatarUrl: u.avatarUrl,
+                coins: u.id === currentUser.id ? calcStats.totalCoins : Math.floor(Math.random() * 5000),
+                level: u.id === currentUser.id ? calcStats.level : Math.floor(Math.random() * 5) + 1,
+            }));
+            rankingData.sort((a, b) => b.coins - a.coins);
+            setAllUsersStats(rankingData);
 
-            } catch (error) {
-                console.error('Failed to fetch profile data:', error);
-            } finally { setLoading(false); }
+            setLoading(false);
         };
         fetchAll();
     }, [currentUser.id]);
