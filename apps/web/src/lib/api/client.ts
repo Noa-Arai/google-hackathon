@@ -1,5 +1,4 @@
 // API Client for Circle App
-import { mockApi } from './mock';
 import {
     Circle, Event, Announcement, RSVP, Settlement, Payment, SettlementWithPayment,
     ChatResponse, PracticeCategory, PracticeSeries, PracticeSession, PracticeRSVP, PracticeSeriesDetail,
@@ -7,61 +6,10 @@ import {
     User, AnnouncementDetail, UpdateEventRequest, AnnouncementPayment
 } from './types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://circle-api-za2cxc4exa-an.a.run.app';
 
 // Default user ID for MVP
 const DEFAULT_USER_ID = 'demo-user-1';
-
-// Mock mode for local development
-import { isMockMode, MOCK_EVENTS, MOCK_ANNOUNCEMENTS, MOCK_RSVPS, MOCK_ALL_RSVPS, MOCK_SETTLEMENTS, MOCK_MY_SETTLEMENTS, MOCK_CIRCLE } from './mock';
-
-function getMockResponse<T>(endpoint: string, options: RequestOptions = {}): T | undefined {
-    if (!isMockMode()) return undefined;
-
-    const { method = 'GET' } = options;
-
-    // NEVER intercept mutations - always let them go to the real API
-    if (method !== 'GET') {
-        return undefined;
-    }
-
-    // GET requests - match endpoint patterns
-    if (endpoint.match(/^\/circles\/[^/]+$/)) return MOCK_CIRCLE as T;
-    if (endpoint.match(/^\/circles\/[^/]+\/events$/)) return MOCK_EVENTS as T;
-    if (endpoint.match(/^\/circles\/[^/]+\/announcements/)) return MOCK_ANNOUNCEMENTS as T;
-    if (endpoint.match(/^\/events\/([^/]+)\/announcements$/)) {
-        const eventId = endpoint.match(/\/events\/([^/]+)\/announcements/)?.[1];
-        return MOCK_ANNOUNCEMENTS.filter(a => a.eventId === eventId) as T;
-    }
-    if (endpoint.match(/^\/events\/([^/]+)\/rsvps$/)) {
-        const eventId = endpoint.match(/\/events\/([^/]+)\/rsvps/)?.[1];
-        return (MOCK_ALL_RSVPS[eventId || ''] || []) as T;
-    }
-    if (endpoint.match(/^\/events\/([^/]+)\/rsvp\/me$/)) {
-        const eventId = endpoint.match(/\/events\/([^/]+)\/rsvp\/me/)?.[1];
-        return (MOCK_RSVPS[eventId || ''] || null) as T;
-    }
-    if (endpoint.match(/^\/events\/([^/]+)\/settlements$/)) {
-        const eventId = endpoint.match(/\/events\/([^/]+)\/settlements/)?.[1];
-        return MOCK_SETTLEMENTS.filter(s => s.eventId === eventId) as T;
-    }
-    if (endpoint.match(/^\/events\/([^/]+)$/)) {
-        const eventId = endpoint.match(/\/events\/([^/]+)/)?.[1];
-        return MOCK_EVENTS.find(e => e.id === eventId) as T;
-    }
-    if (endpoint === '/settlements/me') return MOCK_MY_SETTLEMENTS as T;
-    if (endpoint.match(/^\/announcements\/([^/]+)$/)) {
-        const annId = endpoint.match(/\/announcements\/([^/]+)/)?.[1];
-        const ann = MOCK_ANNOUNCEMENTS.find(a => a.id === annId);
-        if (ann) return { announcement: ann, attendance: MOCK_RSVPS[ann.eventId] || null, payments: [], isTarget: true } as T;
-    }
-    if (endpoint.match(/^\/users\//)) {
-        return { id: DEFAULT_USER_ID, name: 'たなか', avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' } as T;
-    }
-    if (endpoint === '/ai/chat') return { assistantMessage: 'モックモードです。APIに接続されていません。', references: [] } as T;
-
-    return undefined;
-}
 
 interface RequestOptions {
     method?: string;
@@ -70,10 +18,6 @@ interface RequestOptions {
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    // Try mock mode first
-    const mockResult = getMockResponse<T>(endpoint, options);
-    if (mockResult !== undefined) return mockResult;
-
     const { method = 'GET', body, userId } = options;
 
     // Get current user ID from localStorage if not provided
@@ -84,30 +28,38 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
         'X-User-Id': currentUserId,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-        cache: 'no-store',
-    });
+    const url = `${API_BASE_URL}${endpoint}`;
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API error ${response.status}: ${errorText}`);
+    try {
+        const response = await fetch(url, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined,
+            cache: 'no-store',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[API] ${method} ${endpoint} failed: ${response.status} ${errorText}`);
+            throw new Error(`API error ${response.status}: ${errorText}`);
+        }
+
+        // Handle empty responses (204 No Content, etc.)
+        const text = await response.text();
+        if (!text || text === 'null') {
+            return null as T;
+        }
+
+        return JSON.parse(text);
+    } catch (error) {
+        console.error(`[API] ${method} ${endpoint} error:`, error);
+        throw error;
     }
-
-    // Handle empty responses
-    const text = await response.text();
-    if (!text || text === 'null') {
-        return null as T;
-    }
-
-    return JSON.parse(text);
 }
 
 // Log API base URL on load for debugging
 if (typeof window !== 'undefined') {
-    console.log('[API] Base URL:', API_BASE_URL, '| Mock mode:', isMockMode());
+    console.log('[API] Base URL:', API_BASE_URL);
 }
 
 // API functions
