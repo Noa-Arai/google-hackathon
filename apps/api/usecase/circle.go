@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/noa/circle-app/api/domain"
@@ -12,13 +13,15 @@ import (
 type CircleInteractor struct {
 	circleRepo     port.CircleRepository
 	membershipRepo port.MembershipRepository
+	userRepo       port.UserRepository
 }
 
 // NewCircleInteractor creates a new CircleInteractor.
-func NewCircleInteractor(circleRepo port.CircleRepository, membershipRepo port.MembershipRepository) *CircleInteractor {
+func NewCircleInteractor(circleRepo port.CircleRepository, membershipRepo port.MembershipRepository, userRepo port.UserRepository) *CircleInteractor {
 	return &CircleInteractor{
 		circleRepo:     circleRepo,
 		membershipRepo: membershipRepo,
+		userRepo:       userRepo,
 	}
 }
 
@@ -55,7 +58,21 @@ func (i *CircleInteractor) AddMember(ctx context.Context, circleID, userID strin
 	return membership, nil
 }
 
-// GetMembers returns all members of a circle.
-func (i *CircleInteractor) GetMembers(ctx context.Context, circleID string) ([]*domain.Membership, error) {
-	return i.membershipRepo.GetByCircle(ctx, circleID)
+// GetMembers returns all users who are members of a circle.
+func (i *CircleInteractor) GetMembers(ctx context.Context, circleID string) ([]*domain.User, error) {
+	memberships, err := i.membershipRepo.GetByCircle(ctx, circleID)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []*domain.User
+	for _, m := range memberships {
+		user, err := i.userRepo.GetByID(ctx, m.UserID)
+		if err != nil {
+			log.Printf("Warning: could not find user %s: %v", m.UserID, err)
+			continue
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

@@ -63,7 +63,7 @@ func main() {
 	aiService := gemini.NewAIService(geminiAPIKey)
 
 	// Initialize interactors (usecase layer)
-	circleInteractor := usecase.NewCircleInteractor(circleRepo, membershipRepo)
+	circleInteractor := usecase.NewCircleInteractor(circleRepo, membershipRepo, userRepo)
 	eventInteractor := usecase.NewEventInteractor(eventRepo)
 	announcementInteractor := usecase.NewAnnouncementInteractor(announcementRepo)
 	rsvpInteractor := usecase.NewRSVPInteractor(rsvpRepo, eventRepo, settlementRepo, paymentRepo)
