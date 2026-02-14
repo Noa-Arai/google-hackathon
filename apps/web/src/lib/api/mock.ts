@@ -61,7 +61,7 @@ export const MOCK_EVENTS: Event[] = [
     },
 ];
 
-export const MOCK_ANNOUNCEMENTS: Announcement[] = [
+export let MOCK_ANNOUNCEMENTS: Announcement[] = [
     {
         id: 'mock-ann-1',
         circleId: 'mock-circle',
@@ -204,6 +204,35 @@ export const mockApi = {
     getEventsByUser: async () => MOCK_EVENTS, // Simplification
     updateEvent: async () => ({} as Event),
     deleteEvent: async () => { },
+
+    // Announcement Edit/Delete
+    updateAnnouncement: async (id: string, data: { title: string; body: string }) => {
+        const ann = MOCK_ANNOUNCEMENTS.find(a => a.id === id);
+        if (ann) {
+            ann.title = data.title;
+            ann.body = data.body;
+        }
+        return ann as Announcement;
+    },
+    deleteAnnouncement: async (id: string) => {
+        MOCK_ANNOUNCEMENTS = MOCK_ANNOUNCEMENTS.filter(a => a.id !== id);
+    },
+
+    // Practice Series Edit/Delete
+    updatePracticeSeries: async (id: string, data: CreatePracticeSeriesRequest) => {
+        const s = seriesList.find(s => s.id === id);
+        if (s) {
+            s.name = data.name;
+            s.dayOfWeek = data.dayOfWeek;
+            s.startTime = data.startTime;
+            s.location = data.location;
+            s.fee = data.fee;
+        }
+        return s as PracticeSeries;
+    },
+    deletePracticeSeries: async (id: string) => {
+        seriesList = seriesList.filter(s => s.id !== id);
+    },
 
     // Announcements
     getAnnouncements: async () => MOCK_ANNOUNCEMENTS,

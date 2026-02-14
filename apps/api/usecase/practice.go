@@ -146,6 +146,27 @@ func (uc *PracticeUseCase) GetSeriesByCircle(ctx context.Context, circleID strin
 	return uc.seriesRepo.GetByCircle(ctx, circleID)
 }
 
+func (uc *PracticeUseCase) UpdateSeries(ctx context.Context, id string, req *domain.PracticeSeries) (*domain.PracticeSeries, error) {
+	series, err := uc.seriesRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	series.Name = req.Name
+	series.DayOfWeek = req.DayOfWeek
+	series.StartTime = req.StartTime
+	series.Location = req.Location
+	series.Fee = req.Fee
+	// Do not update CircleID, CategoryID, CreatedBy?
+	if err := uc.seriesRepo.Update(ctx, series); err != nil {
+		return nil, err
+	}
+	return series, nil
+}
+
+func (uc *PracticeUseCase) DeleteSeries(ctx context.Context, id string) error {
+	return uc.seriesRepo.Delete(ctx, id)
+}
+
 // --- Session ---
 
 func (uc *PracticeUseCase) CreateSession(ctx context.Context, s *domain.PracticeSession) error {

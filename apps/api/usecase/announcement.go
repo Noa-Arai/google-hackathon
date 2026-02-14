@@ -46,3 +46,22 @@ func (i *AnnouncementInteractor) GetByCircle(ctx context.Context, circleID strin
 	}
 	return i.announcementRepo.GetByCircle(ctx, circleID, limit)
 }
+
+// UpdateAnnouncement updates an announcement.
+func (i *AnnouncementInteractor) UpdateAnnouncement(ctx context.Context, id, title, body string) (*domain.Announcement, error) {
+	announcement, err := i.announcementRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	announcement.Title = title
+	announcement.Body = body
+	if err := i.announcementRepo.Update(ctx, announcement); err != nil {
+		return nil, err
+	}
+	return announcement, nil
+}
+
+// DeleteAnnouncement deletes an announcement.
+func (i *AnnouncementInteractor) DeleteAnnouncement(ctx context.Context, id string) error {
+	return i.announcementRepo.Delete(ctx, id)
+}

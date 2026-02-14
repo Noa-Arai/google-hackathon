@@ -1,42 +1,54 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api, Event } from '@/lib/api';
+import { api, Announcement } from '@/lib/api';
 import { DEFAULT_CIRCLE_ID } from '@/lib/constants';
-import EventCard from '@/components/EventCard';
+import AnnouncementCard from '@/components/AnnouncementCard';
 import ChatPanel from '@/components/ChatPanel';
 
 export default function AnnouncementsPage() {
-    const [events, setEvents] = useState<Event[]>([]);
+    const [announcements, setAnnouncements] = useState<any[]>([]); // Use any for now or import type
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const data = await api.getEvents(DEFAULT_CIRCLE_ID);
-                setEvents(data || []);
-            } catch (err) {
-                setError('APIサーバーに接続できません');
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const load = async () => {
+        try {
+            const data = await api.getAnnouncements(DEFAULT_CIRCLE_ID);
+            setAnnouncements(data || []);
+        } catch (err) {
+            setError('APIサーバーに接続できません');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        fetchEvents();
+    useEffect(() => {
+        load();
     }, []);
+
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!window.confirm('本当に削除しますか？')) return;
+        try {
+            await api.deleteAnnouncement(id);
+            setAnnouncements(prev => prev.filter(a => a.id !== id));
+        } catch (err) {
+            alert('削除に失敗しました');
+        }
+    };
 
     return (
         <>
-            <div className="max-w-6xl mx-auto relative">
+            <div className="max-w-6xl mx-auto relative px-4">
                 {/* Big outline text */}
-                <div className="outline-text select-none hidden lg:block">EVENTS</div>
+                <div className="outline-text select-none hidden lg:block">NEWS</div>
 
                 {/* Header */}
                 <div className="mb-12 animate-slide-in relative z-10">
                     <p className="section-title mb-3">お知らせ</p>
-                    <h1 className="text-4xl font-black text-white tracking-tight">最新イベント</h1>
+                    <h1 className="text-4xl font-black text-white tracking-tight">最新ニュース</h1>
                     <div className="accent-bar mt-4" />
                 </div>
 
@@ -57,17 +69,24 @@ export default function AnnouncementsPage() {
                         <p className="text-[#8b98b0] mb-2">{error}</p>
                         <p className="text-sm text-[#5a6580]">APIサーバー（Go）を起動してください</p>
                     </div>
-                ) : events.length === 0 ? (
+                ) : announcements.length === 0 ? (
                     <div className="card p-16 text-center animate-fade-in">
                         <span className="text-6xl mb-6 block opacity-20">📭</span>
                         <h2 className="text-xl font-semibold text-white mb-2">お知らせはまだありません</h2>
-                        <p className="text-[#8b98b0]">イベントが作成されると、ここに表示されます</p>
+                        <p className="text-[#8b98b0]">お知らせが作成されると、ここに表示されます</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                        {events.map((event, index) => (
-                            <div key={event.id} style={{ animationDelay: `${index * 100}ms` }}>
-                                <EventCard event={event} />
+                        {announcements.map((ann, index) => (
+                            <div key={ann.id} className="relative group" style={{ animationDelay: `${index * 100}ms` }}>
+                                <AnnouncementCard announcement={ann} />
+                                <button
+                                    onClick={(e) => handleDelete(e, ann.id)}
+                                    className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20"
+                                    title="削除"
+                                >
+                                    🗑️
+                                </button>
                             </div>
                         ))}
                     </div>

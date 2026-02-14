@@ -65,6 +65,7 @@ func (r *PracticeSeriesRepository) GetByCircle(ctx context.Context, circleID str
 	return series, nil
 }
 
+// GetByCategory returns practice series by category.
 func (r *PracticeSeriesRepository) GetByCategory(ctx context.Context, categoryID string) ([]*domain.PracticeSeries, error) {
 	iter := r.client.Collection("practice_series").
 		Where("categoryId", "==", categoryID).
@@ -88,4 +89,15 @@ func (r *PracticeSeriesRepository) GetByCategory(ctx context.Context, categoryID
 		series = append(series, &s)
 	}
 	return series, nil
+}
+
+func (r *PracticeSeriesRepository) Update(ctx context.Context, s *domain.PracticeSeries) error {
+	s.UpdatedAt = time.Now()
+	_, err := r.client.Collection("practice_series").Doc(s.ID).Set(ctx, s)
+	return err
+}
+
+func (r *PracticeSeriesRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.client.Collection("practice_series").Doc(id).Delete(ctx)
+	return err
 }

@@ -64,6 +64,7 @@ type Announcement struct {
 	Body      string    `json:"body" firestore:"body"`
 	CreatedBy string    `json:"createdBy" firestore:"createdBy"`
 	CreatedAt time.Time `json:"createdAt" firestore:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt" firestore:"updatedAt"`
 }
 
 // RSVPStatus represents RSVP status.
@@ -163,6 +164,7 @@ type PracticeSeries struct {
 	Fee        int       `json:"fee" firestore:"fee"` // per session
 	CreatedBy  string    `json:"createdBy" firestore:"createdBy"`
 	CreatedAt  time.Time `json:"createdAt" firestore:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt" firestore:"updatedAt"`
 }
 
 // PracticeSession represents a single practice occurrence.

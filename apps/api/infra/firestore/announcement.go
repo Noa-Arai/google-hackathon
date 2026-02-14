@@ -30,6 +30,20 @@ func (r *AnnouncementRepository) Create(ctx context.Context, a *domain.Announcem
 	return nil
 }
 
+// GetByID returns an announcement by ID.
+func (r *AnnouncementRepository) GetByID(ctx context.Context, id string) (*domain.Announcement, error) {
+	doc, err := r.client.Collection("announcements").Doc(id).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var a domain.Announcement
+	if err := doc.DataTo(&a); err != nil {
+		return nil, err
+	}
+	a.ID = doc.Ref.ID
+	return &a, nil
+}
+
 // GetByEvent returns announcements for an event.
 func (r *AnnouncementRepository) GetByEvent(ctx context.Context, eventID string) ([]*domain.Announcement, error) {
 	iter := r.client.Collection("announcements").
@@ -83,4 +97,17 @@ func (r *AnnouncementRepository) GetByCircle(ctx context.Context, circleID strin
 		announcements = append(announcements, &a)
 	}
 	return announcements, nil
+}
+
+// Update updates an announcement.
+func (r *AnnouncementRepository) Update(ctx context.Context, a *domain.Announcement) error {
+	a.UpdatedAt = time.Now()
+	_, err := r.client.Collection("announcements").Doc(a.ID).Set(ctx, a)
+	return err
+}
+
+// Delete deletes an announcement.
+func (r *AnnouncementRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.client.Collection("announcements").Doc(id).Delete(ctx)
+	return err
 }

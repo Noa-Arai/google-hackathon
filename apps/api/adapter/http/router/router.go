@@ -55,6 +55,7 @@ func Setup(
 	mux.HandleFunc("GET /events/{eventId}", eventHandler.Get)
 	mux.HandleFunc("PUT /events/{eventId}", eventHandler.Update)
 	mux.HandleFunc("DELETE /events/{eventId}", eventHandler.Delete)
+	mux.HandleFunc("DELETE /events/{eventId}", eventHandler.Delete)
 	mux.HandleFunc("GET /events/{eventId}/announcements", announcementHandler.GetByEvent)
 	mux.HandleFunc("POST /events/{eventId}/rsvp", rsvpHandler.Submit)
 	mux.HandleFunc("GET /events/{eventId}/rsvp/me", rsvpHandler.GetMy)
@@ -63,6 +64,8 @@ func Setup(
 
 	// Announcement routes
 	mux.HandleFunc("POST /announcements", announcementHandler.Create)
+	mux.HandleFunc("PUT /announcements/{id}", announcementHandler.Update)
+	mux.HandleFunc("DELETE /announcements/{id}", announcementHandler.Delete)
 
 	// Settlement routes
 	mux.HandleFunc("POST /settlements", settlementHandler.Create)
@@ -75,6 +78,8 @@ func Setup(
 	mux.HandleFunc("DELETE /practice-categories/{id}", practiceHandler.DeleteCategory)
 	mux.HandleFunc("POST /practice-series", practiceHandler.CreateSeries)
 	mux.HandleFunc("GET /practice-series/{id}", practiceHandler.GetSeriesDetail)
+	mux.HandleFunc("PUT /practice-series/{id}", practiceHandler.UpdateSeries)
+	mux.HandleFunc("DELETE /practice-series/{id}", practiceHandler.DeleteSeries)
 	mux.HandleFunc("POST /practice-series/{id}/sessions", practiceHandler.CreateSession)
 	mux.HandleFunc("POST /practice-series/{id}/bulk-rsvp", practiceHandler.BulkRSVP)
 	mux.HandleFunc("POST /practice-series/{id}/settlements", practiceHandler.CreateSettlements) // Added

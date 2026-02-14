@@ -42,6 +42,9 @@ type AnnouncementRepository interface {
 	Create(ctx context.Context, a *domain.Announcement) error
 	GetByEvent(ctx context.Context, eventID string) ([]*domain.Announcement, error)
 	GetByCircle(ctx context.Context, circleID string, limit int) ([]*domain.Announcement, error)
+	GetByID(ctx context.Context, id string) (*domain.Announcement, error)
+	Update(ctx context.Context, a *domain.Announcement) error
+	Delete(ctx context.Context, id string) error
 }
 
 // RSVPRepository defines RSVP data access interface.
@@ -87,6 +90,8 @@ type PracticeSeriesRepository interface {
 	GetByID(ctx context.Context, id string) (*domain.PracticeSeries, error)
 	GetByCircle(ctx context.Context, circleID string) ([]*domain.PracticeSeries, error)
 	GetByCategory(ctx context.Context, categoryID string) ([]*domain.PracticeSeries, error)
+	Update(ctx context.Context, s *domain.PracticeSeries) error
+	Delete(ctx context.Context, id string) error
 }
 
 // PracticeSessionRepository defines practice session data access interface.

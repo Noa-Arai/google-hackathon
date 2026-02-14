@@ -5,7 +5,6 @@ import { api, Event } from '@/lib/api/client';
 import { DEFAULT_CIRCLE_ID } from '@/lib/constants';
 import Link from 'next/link';
 import { useUser } from '@/components/providers/UserContext';
-import CalendarView from '@/components/CalendarView';
 
 type RSVPFilter = 'ALL' | 'GO' | 'NO' | 'NONE';
 
@@ -18,7 +17,6 @@ export default function SingleEventList() {
     const [events, setEvents] = useState<EventWithRSVP[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [rsvpFilter, setRsvpFilter] = useState<RSVPFilter>('ALL');
-    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -48,6 +46,18 @@ export default function SingleEventList() {
         fetchEvents();
     }, [currentUser.id]);
 
+    const handleDelete = async (e: React.MouseEvent, id: string, title: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!window.confirm(`イベント「${title}」を削除しますか？`)) return;
+        try {
+            await api.deleteEvent(id);
+            setEvents(prev => prev.filter(ev => ev.id !== id));
+        } catch (err) {
+            alert('削除に失敗しました');
+        }
+    };
+
     const filteredEvents = events.filter(event => {
         if (rsvpFilter === 'GO' && !['GO', 'LATE', 'EARLY'].includes(event.myRsvpStatus || '')) return false;
         if (rsvpFilter === 'NO' && event.myRsvpStatus !== 'NO') return false;
@@ -76,19 +86,7 @@ export default function SingleEventList() {
     return (
         <div className="space-y-6">
             {/* Header / Actions */}
-            <div className="flex items-center justify-between">
-                <div className="flex bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.06]">
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'
-                            }`}
-                    >リスト</button>
-                    <button
-                        onClick={() => setViewMode('calendar')}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${viewMode === 'calendar' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'
-                            }`}
-                    >カレンダー</button>
-                </div>
+            <div className="flex items-center justify-end">
                 <Link
                     href="/events/new"
                     className="flex items-center justify-center px-4 py-1.5 rounded-lg bg-blue-500 text-white text-xs hover:bg-blue-600 transition-colors"
@@ -124,50 +122,49 @@ export default function SingleEventList() {
                 <div className="text-center py-20">
                     <p className="text-white/30 text-sm">該当するイベントはありません</p>
                 </div>
-            ) : viewMode === 'list' ? (
+            ) : (
                 <div className="space-y-1">
                     {filteredEvents.map(event => {
                         const { month, day, weekday } = formatDate(event.startAt);
                         const rsvp = getRsvpLabel(event.myRsvpStatus);
 
                         return (
-                            <Link key={event.id} href={`/events/${event.id}`}>
-                                <div className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.04] transition-colors">
-                                    {/* Date */}
-                                    <div className="flex flex-col items-center w-10 shrink-0">
-                                        <span className="text-[10px] text-white/30">{month}月</span>
-                                        <span className="text-xl font-semibold text-white leading-tight">{day}</span>
-                                        <span className="text-[10px] text-white/30">{weekday}</span>
-                                    </div>
+                            <div key={event.id} className="relative group">
+                                <Link href={`/events/${event.id}`}>
+                                    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.04] transition-colors">
+                                        {/* Date */}
+                                        <div className="flex flex-col items-center w-10 shrink-0">
+                                            <span className="text-[10px] text-white/30">{month}月</span>
+                                            <span className="text-xl font-semibold text-white leading-tight">{day}</span>
+                                            <span className="text-[10px] text-white/30">{weekday}</span>
+                                        </div>
 
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-sm font-medium text-white/80 group-hover:text-white transition-colors truncate">
-                                            {event.title}
-                                        </h3>
-                                        {event.location && (
-                                            <p className="text-xs text-white/25 mt-0.5 truncate">{event.location}</p>
-                                        )}
-                                    </div>
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0 pr-8">
+                                            <h3 className="text-sm font-medium text-white/80 group-hover:text-white transition-colors truncate">
+                                                {event.title}
+                                            </h3>
+                                            {event.location && (
+                                                <p className="text-xs text-white/25 mt-0.5 truncate">{event.location}</p>
+                                            )}
+                                        </div>
 
-                                    {/* RSVP Tag */}
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-md shrink-0 ${rsvp.cls}`}>
-                                        {rsvp.text}
-                                    </span>
-                                </div>
-                            </Link>
+                                        {/* RSVP Tag */}
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-md shrink-0 ${rsvp.cls}`}>
+                                            {rsvp.text}
+                                        </span>
+                                    </div>
+                                </Link>
+                                <button
+                                    onClick={(e) => handleDelete(e, event.id, event.title)}
+                                    className="absolute top-1/2 -translate-y-1/2 right-2 p-2 text-white/20 hover:text-red-400 bg-black/20 hover:bg-black/40 rounded opacity-0 group-hover:opacity-100 transition-all z-10"
+                                    title="削除"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
                         );
                     })}
-                </div>
-            ) : (
-                <div className="animate-fade-in">
-                    <CalendarView items={filteredEvents.map(event => ({
-                        id: event.id,
-                        title: event.title,
-                        start: event.startAt,
-                        type: 'event',
-                        url: `/events/${event.id}`
-                    }))} />
                 </div>
             )}
         </div>

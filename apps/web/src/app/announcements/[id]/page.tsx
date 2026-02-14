@@ -72,8 +72,8 @@ export default function AnnouncementDetailPage() {
                 <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
                     <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">出欠</p>
                     <span className={`text-sm ${attendance.status === 'GO' ? 'text-emerald-400' :
-                            attendance.status === 'NO' ? 'text-white/30' :
-                                'text-amber-400'
+                        attendance.status === 'NO' ? 'text-white/30' :
+                            'text-amber-400'
                         }`}>
                         {attendance.status === 'GO' ? '出席' :
                             attendance.status === 'NO' ? '欠席' :
@@ -105,7 +105,7 @@ export default function AnnouncementDetailPage() {
             {announcement.eventId && (
                 <Link href={`/events/${announcement.eventId}`}
                     className="block py-3 text-center text-xs text-white/30 hover:text-white/60 bg-white/[0.02] border border-white/[0.06] rounded-xl transition-colors">
-                    イベントを見る →
+                    イベント詳細・出欠入力へ →
                 </Link>
             )}
         </div>

@@ -226,44 +226,65 @@ export default function PracticeList() {
             )}
 
             {/* Series List */}
-            {filtered.length === 0 ? (
+            {categories.length === 0 ? (
+                <div className="text-center py-16">
+                    <p className="text-white/30 text-sm">カテゴリが登録されていません</p>
+                    <p className="text-white/20 text-xs mt-1">まずは「+ カテゴリ」からカテゴリを作成してください</p>
+                </div>
+            ) : filtered.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-white/30 text-sm">練習シリーズがありません</p>
                     <p className="text-white/20 text-xs mt-1">「+ シリーズ」から作成してください</p>
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filtered.map(series => (
-                        <Link
-                            key={series.id}
-                            href={`/practices/${series.id}`}
-                            className="block bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors group"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="min-w-0 flex-1">
-                                    <h3 className="text-sm font-medium text-white truncate">{series.name}</h3>
-                                    <div className="flex items-center gap-3 mt-1.5">
-                                        <span className="text-xs text-white/40">
-                                            {DAY_LABELS[series.dayOfWeek]}曜 {series.startTime}
-                                        </span>
-                                        {series.location && (
-                                            <span className="text-xs text-white/30 truncate">{series.location}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 shrink-0 ml-4">
+                        <div key={series.id} className="relative group">
+                            <Link
+                                href={`/practices/${series.id}`}
+                                className="block bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors h-full"
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <h3 className="text-sm font-medium text-white truncate pr-8">{series.name}</h3>
                                     {getCategoryName(series.categoryId) && (
-                                        <span className="text-[10px] px-2 py-0.5 bg-white/[0.06] text-white/40 rounded-full">
+                                        <span className="text-[10px] px-2 py-0.5 bg-white/[0.06] text-white/40 rounded-full shrink-0">
                                             {getCategoryName(series.categoryId)}
                                         </span>
                                     )}
-                                    {series.fee > 0 && (
-                                        <span className="text-xs text-white/30">¥{series.fee.toLocaleString()}</span>
-                                    )}
-                                    <span className="text-white/20 group-hover:text-blue-400 transition-colors">→</span>
                                 </div>
-                            </div>
-                        </Link>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 text-xs text-white/60">
+                                        <span className="w-16">日時</span>
+                                        <span>{DAY_LABELS[series.dayOfWeek]}曜 {series.startTime}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-white/60">
+                                        <span className="w-16">場所</span>
+                                        <span className="truncate">{series.location || '-'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-white/60">
+                                        <span className="w-16">参加費</span>
+                                        <span>{series.fee > 0 ? `¥${series.fee.toLocaleString()}` : '無料'}</span>
+                                    </div>
+                                </div>
+                            </Link>
+                            <button
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (!window.confirm(`「${series.name}」を削除しますか？\n※関連するセッションも削除される可能性があります`)) return;
+                                    try {
+                                        await api.deletePracticeSeries(series.id);
+                                        load();
+                                    } catch (err) {
+                                        alert('削除に失敗しました');
+                                    }
+                                }}
+                                className="absolute top-2 right-2 p-1.5 text-white/20 hover:text-red-400 bg-black/20 hover:bg-black/40 rounded opacity-0 group-hover:opacity-100 transition-all z-10"
+                                title="削除"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
                     ))}
                 </div>
             )}

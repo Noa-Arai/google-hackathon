@@ -233,3 +233,38 @@ func (h *PracticeHandler) CreateSettlements(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusCreated) // 201 Created
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
+
+// UpdateSeries handles PUT /practice-series/{id}.
+func (h *PracticeHandler) UpdateSeries(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req dto.CreatePracticeSeriesRequest // Reusing Create request DTO for simplicity
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Create domain object from req
+	updateData := &domain.PracticeSeries{
+		Name:      req.Name,
+		DayOfWeek: req.DayOfWeek,
+		StartTime: req.StartTime,
+		Location:  req.Location,
+		Fee:       req.Fee,
+	}
+	updated, err := h.uc.UpdateSeries(r.Context(), id, updateData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updated)
+}
+
+// DeleteSeries handles DELETE /practice-series/{id}.
+func (h *PracticeHandler) DeleteSeries(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if err := h.uc.DeleteSeries(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

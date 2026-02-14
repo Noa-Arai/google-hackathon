@@ -236,6 +236,20 @@ const realApi = {
 
     getSessionRSVPs: (sessionId: string) =>
         apiRequest<PracticeRSVP[]>(`/practice-sessions/${sessionId}/rsvps`),
+
+    // Announcement Edit/Delete
+    updateAnnouncement: (id: string, data: { title: string; body: string }) =>
+        apiRequest<Announcement>(`/announcements/${id}`, { method: 'PUT', body: data }),
+
+    deleteAnnouncement: (id: string) =>
+        apiRequest<void>(`/announcements/${id}`, { method: 'DELETE' }),
+
+    // Practice Series Edit/Delete
+    updatePracticeSeries: (id: string, data: CreatePracticeSeriesRequest) =>
+        apiRequest<PracticeSeries>(`/practice-series/${id}`, { method: 'PUT', body: data }),
+
+    deletePracticeSeries: (id: string) =>
+        apiRequest<void>(`/practice-series/${id}`, { method: 'DELETE' }),
 };
 
 // Export api based on mock mode
