@@ -7,7 +7,168 @@ import {
 
 const CURRENT_USER_ID = 'demo-user-1';
 
-// Mock Data Store
+// --- MOCK DATA FROM NOA BRANCH (Events, Announcements, etc.) ---
+
+const now = new Date();
+const tomorrow = new Date(now.getTime() + 86400000);
+const nextWeek = new Date(now.getTime() + 7 * 86400000);
+const lastWeek = new Date(now.getTime() - 7 * 86400000);
+
+export const MOCK_EVENTS: Event[] = [
+    {
+        id: 'mock-event-1',
+        circleId: 'mock-circle',
+        title: '【通常練習】土曜テニス練習',
+        startAt: tomorrow.toISOString(),
+        location: '東京都立公園テニスコート',
+        coverImageUrl: 'https://picsum.photos/seed/tennis1/400/300',
+        rsvpTargetUserIds: ['demo-user-1', 'demo-user-2', 'demo-user-3', 'demo-user-4'],
+        createdBy: 'demo-user-1',
+        createdAt: now.toISOString(),
+    },
+    {
+        id: 'mock-event-2',
+        circleId: 'mock-circle',
+        title: '【特別イベント】春季テニス大会',
+        startAt: nextWeek.toISOString(),
+        location: '品川スポーツセンター',
+        coverImageUrl: 'https://picsum.photos/seed/tennis2/400/300',
+        rsvpTargetUserIds: ['demo-user-1', 'demo-user-2', 'demo-user-3'],
+        createdBy: 'demo-user-1',
+        createdAt: now.toISOString(),
+    },
+    {
+        id: 'mock-event-3',
+        circleId: 'mock-circle',
+        title: '【通常練習】水曜夜練習',
+        startAt: lastWeek.toISOString(),
+        location: '渋谷区スポーツセンター',
+        coverImageUrl: '',
+        rsvpTargetUserIds: ['demo-user-1', 'demo-user-2'],
+        createdBy: 'demo-user-2',
+        createdAt: lastWeek.toISOString(),
+    },
+    {
+        id: 'mock-event-4',
+        circleId: 'mock-circle',
+        title: '【特別イベント】新歓BBQ',
+        startAt: new Date(now.getTime() + 14 * 86400000).toISOString(),
+        location: '代々木公園',
+        coverImageUrl: 'https://picsum.photos/seed/bbq/400/300',
+        rsvpTargetUserIds: ['demo-user-1', 'demo-user-2', 'demo-user-3', 'demo-user-4'],
+        createdBy: 'demo-user-1',
+        createdAt: now.toISOString(),
+    },
+];
+
+export const MOCK_ANNOUNCEMENTS: Announcement[] = [
+    {
+        id: 'mock-ann-1',
+        circleId: 'mock-circle',
+        eventId: 'mock-event-1',
+        title: '練習場所の変更について',
+        body: '今週の練習場所が変更になりました。詳細はこちらをご確認ください。新しい場所は東京都立公園テニスコートA面です。',
+        createdBy: 'demo-user-1',
+        createdAt: now.toISOString(),
+    },
+    {
+        id: 'mock-ann-2',
+        circleId: 'mock-circle',
+        eventId: 'mock-event-2',
+        title: '大会エントリー締切',
+        body: '春季テニス大会のエントリー締切は来週金曜日です。参加希望の方は早めに登録をお願いします。',
+        createdBy: 'demo-user-1',
+        createdAt: lastWeek.toISOString(),
+    },
+];
+
+export const MOCK_RSVPS: Record<string, RSVP | null> = {
+    'mock-event-1': { id: 'mock-rsvp-1', eventId: 'mock-event-1', userId: 'demo-user-1', status: 'GO', note: '', updatedAt: now.toISOString() },
+    'mock-event-2': null, // 未登録
+    'mock-event-3': { id: 'mock-rsvp-3', eventId: 'mock-event-3', userId: 'demo-user-1', status: 'NO', note: '仕事', updatedAt: lastWeek.toISOString() },
+    'mock-event-4': null, // 未登録
+};
+
+export const MOCK_ALL_RSVPS: Record<string, RSVP[]> = {
+    'mock-event-1': [
+        { id: 'r1', eventId: 'mock-event-1', userId: 'demo-user-1', status: 'GO', note: '', updatedAt: now.toISOString() },
+        { id: 'r2', eventId: 'mock-event-1', userId: 'demo-user-2', status: 'GO', note: '', updatedAt: now.toISOString() },
+        { id: 'r3', eventId: 'mock-event-1', userId: 'demo-user-3', status: 'LATE', note: '30分遅れます', updatedAt: now.toISOString() },
+        { id: 'r4', eventId: 'mock-event-1', userId: 'demo-user-4', status: 'NO', note: '', updatedAt: now.toISOString() },
+    ],
+    'mock-event-2': [
+        { id: 'r5', eventId: 'mock-event-2', userId: 'demo-user-2', status: 'GO', note: '', updatedAt: now.toISOString() },
+    ],
+    'mock-event-3': [
+        { id: 'r6', eventId: 'mock-event-3', userId: 'demo-user-1', status: 'NO', note: '仕事', updatedAt: lastWeek.toISOString() },
+        { id: 'r7', eventId: 'mock-event-3', userId: 'demo-user-2', status: 'GO', note: '', updatedAt: lastWeek.toISOString() },
+    ],
+};
+
+export const MOCK_SETTLEMENTS: Settlement[] = [
+    {
+        id: 'mock-settle-1',
+        circleId: 'mock-circle',
+        eventId: 'mock-event-1',
+        title: 'コート代',
+        amount: 500,
+        dueAt: nextWeek.toISOString(),
+        targetUserIds: ['demo-user-1', 'demo-user-2', 'demo-user-3'],
+        bankInfo: '三菱UFJ 1234567',
+        paypayInfo: '@tanaka-tennis',
+        createdAt: now.toISOString(),
+    },
+    {
+        id: 'mock-settle-2',
+        circleId: 'mock-circle',
+        eventId: 'mock-event-3',
+        title: 'ボール代',
+        amount: 300,
+        dueAt: lastWeek.toISOString(),
+        targetUserIds: ['demo-user-1', 'demo-user-2'],
+        bankInfo: '三菱UFJ 1234567',
+        paypayInfo: '',
+        createdAt: lastWeek.toISOString(),
+    },
+];
+
+export const MOCK_MY_SETTLEMENTS: { unpaid: SettlementWithPayment[]; paid: SettlementWithPayment[] } = {
+    unpaid: [
+        {
+            settlement: MOCK_SETTLEMENTS[0],
+            payment: null,
+        },
+    ],
+    paid: [
+        {
+            settlement: MOCK_SETTLEMENTS[1],
+            payment: {
+                id: 'mock-pay-1',
+                settlementId: 'mock-settle-2',
+                userId: 'demo-user-1',
+                status: 'CONFIRMED',
+                method: 'PAYPAY',
+                note: '',
+                reportedAt: lastWeek.toISOString(),
+            },
+        },
+    ],
+};
+
+export const MOCK_CIRCLE: Circle = {
+    id: 'mock-circle',
+    name: 'CIRCLE',
+    description: 'テニスサークル',
+    logoUrl: '',
+    createdAt: now.toISOString(),
+};
+
+export function isMockMode(): boolean {
+    return process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
+}
+
+// --- MOCK DATA FROM NOA-RSVP BRANCH (Practices) ---
+
 let categories: PracticeCategory[] = [
     { id: 'cat-1', circleId: 'circle-1', name: 'テニス', parentId: '', order: 1, createdBy: 'admin', createdAt: new Date().toISOString() },
     { id: 'cat-2', circleId: 'circle-1', name: 'シングルス', parentId: 'cat-1', order: 1, createdBy: 'admin', createdAt: new Date().toISOString() },
@@ -31,53 +192,48 @@ let rsvps: PracticeRSVP[] = [
     { id: 'rsvp-2', sessionId: 'sess-2', userId: CURRENT_USER_ID, status: 'NO', updatedAt: new Date().toISOString() },
 ];
 
-let settlements: Settlement[] = [];
-
-// API Implementation
+// Combine implementation
 export const mockApi = {
     // Circle
-    getCircle: async (id: string): Promise<Circle> => ({
-        id: 'circle-1',
-        name: 'TENNIS CIRCLE',
-        description: 'Mock Circle',
-        logoUrl: '',
-        createdAt: new Date().toISOString(),
-    }),
+    getCircle: async (id: string): Promise<Circle> => MOCK_CIRCLE,
 
-    // Events (Empty for now)
-    getEvents: async () => [],
-    getEvent: async () => ({} as Event),
+    // Events
+    getEvents: async () => MOCK_EVENTS,
+    getEvent: async (eventId: string) => MOCK_EVENTS.find(e => e.id === eventId) as Event,
     createEvent: async () => ({} as Event),
-    getEventsByUser: async () => [],
+    getEventsByUser: async () => MOCK_EVENTS, // Simplification
     updateEvent: async () => ({} as Event),
     deleteEvent: async () => { },
 
-    // Announcements (Empty)
-    getAnnouncements: async () => [],
-    getEventAnnouncements: async () => [],
+    // Announcements
+    getAnnouncements: async () => MOCK_ANNOUNCEMENTS,
+    getEventAnnouncements: async (eventId: string) => MOCK_ANNOUNCEMENTS.filter(a => a.eventId === eventId),
     createAnnouncement: async () => ({} as Announcement),
-    getAnnouncement: async () => ({} as AnnouncementDetail),
+    getAnnouncement: async (id: string) => {
+        const ann = MOCK_ANNOUNCEMENTS.find(a => a.id === id);
+        return { announcement: ann, attendance: undefined, payments: [], isTarget: true } as AnnouncementDetail;
+    },
 
     // RSVP (Event)
-    submitRSVP: async () => ({} as RSVP),
-    getMyRSVP: async () => null,
-    getEventRSVPs: async () => [],
+    submitRSVP: async () => ({ status: 'GO' } as RSVP),
+    getMyRSVP: async (eventId: string) => MOCK_RSVPS[eventId] || null,
+    getEventRSVPs: async (eventId: string) => MOCK_ALL_RSVPS[eventId] || [],
 
     // Settlements
-    getEventSettlements: async () => [],
-    getMySettlements: async () => ({ unpaid: [], paid: [] }),
+    getEventSettlements: async (eventId: string) => MOCK_SETTLEMENTS.filter(s => s.eventId === eventId),
+    getMySettlements: async () => MOCK_MY_SETTLEMENTS,
     createSettlement: async () => ({} as Settlement),
     reportPayment: async () => ({} as Payment),
     updateSettlement: async () => ({} as Settlement),
 
     // Chat
-    chat: async () => ({ assistantMessage: 'Mock response', references: [] }),
+    chat: async () => ({ assistantMessage: 'モックモードです。APIに接続されていません。', references: [] }),
 
     // User
     updateUser: async () => ({} as User),
     getUser: async (id: string) => ({ id, name: 'Demo User', avatarUrl: '' }),
 
-    // Practice API
+    // Practice API (Keep existing dynamic logic)
     getPracticeCategories: async (circleId: string) => [...categories],
 
     createPracticeCategory: async (data: any) => {
@@ -171,7 +327,6 @@ export const mockApi = {
     },
 
     createPracticeSettlements: async (seriesId: string, month: string) => {
-        // Mock logic: allow success
         console.log(`Created settlements for series ${seriesId} month ${month}`);
         return { status: 'ok' };
     },

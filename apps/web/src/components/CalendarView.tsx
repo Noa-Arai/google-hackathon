@@ -5,16 +5,24 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
-import { Event } from '@/lib/api/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import './CalendarView.css';
 
-interface CalendarViewProps {
-    events: Event[];
+export interface CalendarItem {
+    id: string;
+    title: string;
+    start: string;
+    type: 'event' | 'practice';
+    url: string;
+    color?: string;
 }
 
-export default function CalendarView({ events }: CalendarViewProps) {
+interface CalendarViewProps {
+    items: CalendarItem[];
+}
+
+export default function CalendarView({ items }: CalendarViewProps) {
     const router = useRouter();
     const [isMobile, setIsMobile] = useState(false);
 
@@ -28,23 +36,24 @@ export default function CalendarView({ events }: CalendarViewProps) {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const calendarEvents = events.map(event => {
-        const isPractice = event.title.includes('通常練習');
-        return {
-            id: event.id,
-            title: event.title,
-            start: event.startAt,
-            backgroundColor: isPractice ? '#10b981' : '#8b5cf6', // Green for practice, Purple for special
-            borderColor: isPractice ? '#059669' : '#7c3aed',
-            textColor: '#ffffff',
-            extendedProps: {
-                location: event.location
-            }
-        };
-    });
+    const calendarEvents = items.map(item => ({
+        id: item.id,
+        title: item.title,
+        start: item.start,
+        backgroundColor: item.type === 'practice' ? '#10b981' : '#8b5cf6', // Green for practice, Purple for event
+        borderColor: item.type === 'practice' ? '#059669' : '#7c3aed',
+        textColor: '#ffffff',
+        extendedProps: {
+            url: item.url
+        }
+    }));
 
     const handleEventClick = (info: any) => {
-        router.push(`/events/${info.event.id}`);
+        info.jsEvent.preventDefault(); // Prevent default browser navigation
+        const url = info.event.extendedProps.url;
+        if (url) {
+            router.push(url);
+        }
     };
 
     return (

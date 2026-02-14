@@ -12,6 +12,62 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 // Default user ID for MVP
 const DEFAULT_USER_ID = 'demo-user-1';
 
+// Mock mode for local development
+import { isMockMode, MOCK_EVENTS, MOCK_ANNOUNCEMENTS, MOCK_RSVPS, MOCK_ALL_RSVPS, MOCK_SETTLEMENTS, MOCK_MY_SETTLEMENTS, MOCK_CIRCLE } from './mock';
+
+function getMockResponse<T>(endpoint: string, options: RequestOptions = {}): T | undefined {
+    if (!isMockMode()) return undefined;
+
+    const { method = 'GET' } = options;
+
+    // For non-GET requests in mock mode, return a simulated success
+    if (method !== 'GET') {
+        // Simulate POST/PUT/DELETE
+        if (endpoint.includes('/rsvp')) {
+            const body = options.body as { status?: string; note?: string } | undefined;
+            return { id: 'mock-new', eventId: 'mock', userId: DEFAULT_USER_ID, status: body?.status || 'GO', note: body?.note || '', updatedAt: new Date().toISOString() } as T;
+        }
+        return {} as T;
+    }
+
+    // GET requests - match endpoint patterns
+    if (endpoint.match(/^\/circles\/[^/]+$/)) return MOCK_CIRCLE as T;
+    if (endpoint.match(/^\/circles\/[^/]+\/events$/)) return MOCK_EVENTS as T;
+    if (endpoint.match(/^\/circles\/[^/]+\/announcements/)) return MOCK_ANNOUNCEMENTS as T;
+    if (endpoint.match(/^\/events\/([^/]+)\/announcements$/)) {
+        const eventId = endpoint.match(/\/events\/([^/]+)\/announcements/)?.[1];
+        return MOCK_ANNOUNCEMENTS.filter(a => a.eventId === eventId) as T;
+    }
+    if (endpoint.match(/^\/events\/([^/]+)\/rsvps$/)) {
+        const eventId = endpoint.match(/\/events\/([^/]+)\/rsvps/)?.[1];
+        return (MOCK_ALL_RSVPS[eventId || ''] || []) as T;
+    }
+    if (endpoint.match(/^\/events\/([^/]+)\/rsvp\/me$/)) {
+        const eventId = endpoint.match(/\/events\/([^/]+)\/rsvp\/me/)?.[1];
+        return (MOCK_RSVPS[eventId || ''] || null) as T;
+    }
+    if (endpoint.match(/^\/events\/([^/]+)\/settlements$/)) {
+        const eventId = endpoint.match(/\/events\/([^/]+)\/settlements/)?.[1];
+        return MOCK_SETTLEMENTS.filter(s => s.eventId === eventId) as T;
+    }
+    if (endpoint.match(/^\/events\/([^/]+)$/)) {
+        const eventId = endpoint.match(/\/events\/([^/]+)/)?.[1];
+        return MOCK_EVENTS.find(e => e.id === eventId) as T;
+    }
+    if (endpoint === '/settlements/me') return MOCK_MY_SETTLEMENTS as T;
+    if (endpoint.match(/^\/announcements\/([^/]+)$/)) {
+        const annId = endpoint.match(/\/announcements\/([^/]+)/)?.[1];
+        const ann = MOCK_ANNOUNCEMENTS.find(a => a.id === annId);
+        if (ann) return { announcement: ann, attendance: MOCK_RSVPS[ann.eventId] || null, payments: [], isTarget: true } as T;
+    }
+    if (endpoint.match(/^\/users\//)) {
+        return { id: DEFAULT_USER_ID, name: 'たなか', avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' } as T;
+    }
+    if (endpoint === '/ai/chat') return { assistantMessage: 'モックモードです。APIに接続されていません。', references: [] } as T;
+
+    return undefined;
+}
+
 interface RequestOptions {
     method?: string;
     body?: unknown;
@@ -19,6 +75,10 @@ interface RequestOptions {
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    // Try mock mode first
+    const mockResult = getMockResponse<T>(endpoint, options);
+    if (mockResult !== undefined) return mockResult;
+
     const { method = 'GET', body, userId } = options;
 
     // Get current user ID from localStorage if not provided
