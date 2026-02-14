@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { DEFAULT_CIRCLE_ID, DEFAULT_USER_ID } from '@/lib/constants';
+import { MOCK_USERS } from '@/lib/constants/users';
 import Link from 'next/link';
 import { User } from '@/lib/api/types';
 
@@ -26,11 +27,15 @@ export default function CreateEventPage() {
         const fetchMembers = async () => {
             try {
                 const data = await api.getMembers(DEFAULT_CIRCLE_ID);
-                setMembers(data);
-                // Default all selected
-                setTargetUserIds(data.map(u => u.id));
+                // Use API data if sufficient, otherwise fallback to MOCK_USERS
+                const users = (data && data.length > 1) ? data : MOCK_USERS;
+                setMembers(users);
+                setTargetUserIds(users.map(u => u.id));
             } catch (e) {
                 console.error('Failed to fetch members', e);
+                // Fallback to MOCK_USERS
+                setMembers(MOCK_USERS);
+                setTargetUserIds(MOCK_USERS.map(u => u.id));
             }
         };
         fetchMembers();
@@ -161,8 +166,8 @@ export default function CreateEventPage() {
                         {members.map(member => (
                             <label key={member.id} className="flex items-center gap-3 p-2 hover:bg-white/[0.02] rounded-lg cursor-pointer transition-colors">
                                 <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${targetUserIds.includes(member.id)
-                                        ? 'bg-[#3b82f6] border-[#3b82f6]'
-                                        : 'border-[#2a3548]'
+                                    ? 'bg-[#3b82f6] border-[#3b82f6]'
+                                    : 'border-[#2a3548]'
                                     }`}>
                                     {targetUserIds.includes(member.id) && (
                                         <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

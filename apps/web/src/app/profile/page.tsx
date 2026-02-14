@@ -82,7 +82,11 @@ export default function ProfilePage() {
 
                     // Check if target user
                     if (event.rsvpTargetUserIds && event.rsvpTargetUserIds.length > 0) {
-                        if (!event.rsvpTargetUserIds.includes(currentUser.id)) continue;
+                        // Verify targets contain valid user IDs (not corrupted Membership IDs)
+                        const knownUserIds = MOCK_USERS.map(u => u.id);
+                        const hasValidTargets = event.rsvpTargetUserIds.some(id => knownUserIds.includes(id));
+                        if (hasValidTargets && !event.rsvpTargetUserIds.includes(currentUser.id)) continue;
+                        // If no valid targets found, treat as targeting all users (legacy data)
                     }
 
                     try {

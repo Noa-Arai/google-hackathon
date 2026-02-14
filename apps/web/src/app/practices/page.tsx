@@ -79,6 +79,17 @@ export default function PracticesPage() {
         load();
     };
 
+    const handleDeleteCategory = async (id: string) => {
+        if (!confirm('このカテゴリを削除しますか？')) return;
+        try {
+            await api.deletePracticeCategory(id);
+            if (selectedCategory === id) setSelectedCategory('all');
+            load();
+        } catch (e) {
+            console.error('Failed to delete category', e);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -214,16 +225,24 @@ export default function PracticesPage() {
                         全て
                     </button>
                     {rootCategories.map(cat => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`text-xs px-3 py-1.5 rounded-full shrink-0 transition-colors ${selectedCategory === cat.id
-                                ? 'bg-white text-black'
-                                : 'bg-white/[0.06] text-white/50 hover:text-white/80'
-                                }`}
-                        >
-                            {cat.name}
-                        </button>
+                        <div key={cat.id} className="flex items-center gap-1 shrink-0">
+                            <button
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`text-xs px-3 py-1.5 rounded-full transition-colors ${selectedCategory === cat.id
+                                    ? 'bg-white text-black'
+                                    : 'bg-white/[0.06] text-white/50 hover:text-white/80'
+                                    }`}
+                            >
+                                {cat.name}
+                            </button>
+                            <button
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                className="text-white/20 hover:text-red-400 text-xs transition-colors p-0.5"
+                                title="カテゴリを削除"
+                            >
+                                ×
+                            </button>
+                        </div>
                     ))}
                 </div>
             )}
