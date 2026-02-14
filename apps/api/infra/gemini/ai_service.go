@@ -36,8 +36,7 @@ func (s *AIService) GenerateResponse(ctx context.Context, message string, announ
 	}
 	defer client.Close()
 
-	// Use specific version to avoid 404
-	model := client.GenerativeModel("gemini-1.5-flash-latest")
+	model := client.GenerativeModel("gemini-2.0-flash")
 
 	// Build context from announcements
 	var contextParts []string
