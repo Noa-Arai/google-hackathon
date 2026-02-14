@@ -55,7 +55,6 @@ func Setup(
 	mux.HandleFunc("GET /events/{eventId}", eventHandler.Get)
 	mux.HandleFunc("PUT /events/{eventId}", eventHandler.Update)
 	mux.HandleFunc("DELETE /events/{eventId}", eventHandler.Delete)
-	mux.HandleFunc("DELETE /events/{eventId}", eventHandler.Delete)
 	mux.HandleFunc("GET /events/{eventId}/announcements", announcementHandler.GetByEvent)
 	mux.HandleFunc("POST /events/{eventId}/rsvp", rsvpHandler.Submit)
 	mux.HandleFunc("GET /events/{eventId}/rsvp/me", rsvpHandler.GetMy)
