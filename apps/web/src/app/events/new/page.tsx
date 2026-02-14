@@ -23,6 +23,12 @@ export default function CreateEventPage() {
     const [targetUserIds, setTargetUserIds] = useState<string[]>([]);
     const [isAllTarget, setIsAllTarget] = useState(true);
 
+    // Settlement fields
+    const [enableSettlement, setEnableSettlement] = useState(false);
+    const [settlementTitle, setSettlementTitle] = useState('参加費');
+    const [settlementAmount, setSettlementAmount] = useState<number>(0);
+    const [settlementDueDays, setSettlementDueDays] = useState(7);
+
     useEffect(() => {
         const fetchMembers = async () => {
             try {
@@ -82,6 +88,25 @@ export default function CreateEventPage() {
                 rsvpTargetUserIds: targetUserIds,
                 createdBy: DEFAULT_USER_ID,
             });
+
+            // Auto-create settlement if enabled
+            if (enableSettlement && settlementAmount > 0) {
+                try {
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + settlementDueDays);
+                    await api.createSettlement({
+                        circleId: DEFAULT_CIRCLE_ID,
+                        eventId: result.id,
+                        title: settlementTitle || '参加費',
+                        amount: settlementAmount,
+                        dueAt: dueDate.toISOString(),
+                        targetUserIds: targetUserIds,
+                    });
+                } catch (settlementErr) {
+                    console.error('Settlement creation failed:', settlementErr);
+                }
+            }
+
             router.push(`/events/${result.id}`);
         } catch (err) {
             setError('作成に失敗しました。APIが起動しているか確認してください。');
@@ -205,6 +230,64 @@ export default function CreateEventPage() {
                         placeholder="https://example.com/image.jpg"
                         className="w-full px-5 py-4 rounded-xl bg-[#0a0f1c] border border-[#2a3548] text-white placeholder-[#5a6580] focus:outline-none focus:border-[#3b82f6]"
                     />
+                </div>
+
+                {/* Settlement / Fee Section */}
+                <div>
+                    <div className="flex items-center gap-3 mb-3">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={enableSettlement}
+                                onChange={(e) => setEnableSettlement(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[#2a3548] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#3b82f6]"></div>
+                        </label>
+                        <span className="text-sm font-medium text-[#8b98b0]">参加費を設定する</span>
+                    </div>
+
+                    {enableSettlement && (
+                        <div className="bg-[#0a0f1c] border border-[#2a3548] rounded-xl p-4 space-y-4">
+                            <div>
+                                <label className="block text-xs text-[#5a6580] mb-1">費目</label>
+                                <input
+                                    type="text"
+                                    value={settlementTitle}
+                                    onChange={(e) => setSettlementTitle(e.target.value)}
+                                    placeholder="参加費"
+                                    className="w-full px-4 py-3 rounded-lg bg-[#0d1424] border border-[#2a3548] text-white placeholder-[#5a6580] focus:outline-none focus:border-[#3b82f6] text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-[#5a6580] mb-1">金額 (円)</label>
+                                <input
+                                    type="number"
+                                    value={settlementAmount || ''}
+                                    onChange={(e) => setSettlementAmount(Number(e.target.value))}
+                                    placeholder="1000"
+                                    min={0}
+                                    className="w-full px-4 py-3 rounded-lg bg-[#0d1424] border border-[#2a3548] text-white placeholder-[#5a6580] focus:outline-none focus:border-[#3b82f6] text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-[#5a6580] mb-1">支払期限 (イベント作成日から何日後)</label>
+                                <select
+                                    value={settlementDueDays}
+                                    onChange={(e) => setSettlementDueDays(Number(e.target.value))}
+                                    className="w-full px-4 py-3 rounded-lg bg-[#0d1424] border border-[#2a3548] text-white focus:outline-none focus:border-[#3b82f6] text-sm"
+                                >
+                                    <option value={3}>3日後</option>
+                                    <option value={7}>7日後</option>
+                                    <option value={14}>14日後</option>
+                                    <option value={30}>30日後</option>
+                                </select>
+                            </div>
+                            <p className="text-xs text-[#5a6580]">
+                                対象者のホーム画面に「未清算」アラートが表示されます。
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Error */}

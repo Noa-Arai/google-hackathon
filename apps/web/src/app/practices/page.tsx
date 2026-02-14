@@ -87,6 +87,7 @@ export default function PracticesPage() {
             load();
         } catch (e) {
             console.error('Failed to delete category', e);
+            alert('カテゴリの削除に失敗しました。');
         }
     };
 

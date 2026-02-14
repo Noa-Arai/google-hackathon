@@ -102,7 +102,7 @@ export default function EditEventPage() {
         return <div className="p-8 text-center text-[#8b98b0]">読み込み中...</div>;
     }
 
-    if (error) {
+    if (error && !title) {
         return (
             <div className="max-w-2xl mx-auto p-8">
                 <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-500 mb-4">
@@ -130,6 +130,11 @@ export default function EditEventPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="card p-8 animate-fade-in space-y-6">
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl text-red-400 text-sm">
+                        {error}
+                    </div>
+                )}
                 {/* Title */}
                 <div>
                     <label className="block text-sm font-medium text-[#8b98b0] mb-2">
