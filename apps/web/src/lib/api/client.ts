@@ -71,6 +71,9 @@ const realApi = {
     getMembers: (circleId: string) =>
         apiRequest<User[]>(`/circles/${circleId}/members`),
 
+    addMember: (circleId: string, userId: string, role: 'ADMIN' | 'MEMBER' = 'MEMBER') =>
+        apiRequest<void>(`/circles/${circleId}/members`, { method: 'POST', body: { userId, role } }),
+
     // Events
     getEvents: (circleId: string) =>
         apiRequest<Event[]>(`/circles/${circleId}/events`),

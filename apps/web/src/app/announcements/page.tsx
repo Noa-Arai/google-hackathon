@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api, Announcement } from '@/lib/api';
 import { DEFAULT_CIRCLE_ID } from '@/lib/constants';
+import Link from 'next/link';
 import AnnouncementCard from '@/components/AnnouncementCard';
 import ChatPanel from '@/components/ChatPanel';
 
@@ -47,10 +48,18 @@ export default function AnnouncementsPage() {
                 <div className="outline-text select-none hidden lg:block">NEWS</div>
 
                 {/* Header */}
-                <div className="mb-12 animate-slide-in relative z-10">
-                    <p className="section-title mb-3">お知らせ</p>
-                    <h1 className="text-4xl font-black text-white tracking-tight">最新ニュース</h1>
-                    <div className="accent-bar mt-4" />
+                <div className="mb-12 animate-slide-in relative z-10 flex items-end justify-between">
+                    <div>
+                        <p className="section-title mb-3">お知らせ</p>
+                        <h1 className="text-4xl font-black text-white tracking-tight">最新ニュース</h1>
+                        <div className="accent-bar mt-4" />
+                    </div>
+                    <Link
+                        href="/announcements/new"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2"
+                    >
+                        <span>＋</span> お知らせ作成
+                    </Link>
                 </div>
 
                 {isLoading ? (

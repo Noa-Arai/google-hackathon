@@ -89,10 +89,18 @@ export default function PaymentsPage() {
             <div className="outline-text select-none hidden lg:block">PAYMENT</div>
 
             {/* Header */}
-            <div className="mb-12 animate-slide-in relative z-10">
-                <p className="section-title mb-3">清算管理</p>
-                <h1 className="text-4xl font-black text-white tracking-tight">支払い</h1>
-                <div className="accent-bar mt-4" />
+            <div className="mb-12 animate-slide-in relative z-10 flex items-end justify-between">
+                <div>
+                    <p className="section-title mb-3">清算管理</p>
+                    <h1 className="text-4xl font-black text-white tracking-tight">支払い</h1>
+                    <div className="accent-bar mt-4" />
+                </div>
+                <Link
+                    href="/settlements/new"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2"
+                >
+                    <span>＋</span> 請求作成
+                </Link>
             </div>
 
             {/* Tabs */}
