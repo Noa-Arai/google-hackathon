@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { DEFAULT_CIRCLE_ID, DEFAULT_USER_ID } from '@/lib/constants';
 import { useUser } from '@/components/providers/UserContext';
+import { Event } from '@/lib/api/types';
 import Link from 'next/link';
 
 export default function NewAnnouncementPage() {
@@ -13,8 +14,27 @@ export default function NewAnnouncementPage() {
 
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
+    const [events, setEvents] = useState<Event[]>([]);
+    const [selectedEventId, setSelectedEventId] = useState('');
+
+    const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadEvents = async () => {
+            try {
+                const data = await api.getEvents(DEFAULT_CIRCLE_ID);
+                setEvents(data || []);
+            } catch (err) {
+                console.error(err);
+                // Don't block page load if events fail
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadEvents();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,7 +49,7 @@ export default function NewAnnouncementPage() {
         try {
             await api.createAnnouncement({
                 circleId: DEFAULT_CIRCLE_ID,
-                eventId: '', // General announcement
+                eventId: selectedEventId || '', // Optional
                 title: title.trim(),
                 body: body.trim(),
                 createdBy: currentUser?.id || DEFAULT_USER_ID,
@@ -43,6 +63,14 @@ export default function NewAnnouncementPage() {
             setIsSubmitting(false);
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-2xl mx-auto px-4 pb-20">
@@ -62,7 +90,7 @@ export default function NewAnnouncementPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                     <label htmlFor="title" className="block text-sm font-medium text-[#8b98b0]">
-                        タイトル
+                        タイトル <span className="text-red-400">*</span>
                     </label>
                     <input
                         id="title"
@@ -76,8 +104,35 @@ export default function NewAnnouncementPage() {
                 </div>
 
                 <div className="space-y-2">
+                    <label htmlFor="event" className="block text-sm font-medium text-[#8b98b0]">
+                        関連イベント (任意)
+                    </label>
+                    <div className="relative">
+                        <select
+                            id="event"
+                            value={selectedEventId}
+                            onChange={(e) => setSelectedEventId(e.target.value)}
+                            className="w-full bg-[#151d2e] border border-[#2a3548] text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all appearance-none cursor-pointer"
+                        >
+                            <option value="">選択しない</option>
+                            {events.map(event => (
+                                <option key={event.id} value={event.id}>
+                                    {event.title} ({new Date(event.startAt).toLocaleDateString()})
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">
+                            ▼
+                        </div>
+                    </div>
+                    <p className="text-xs text-[#8b98b0] mt-1">
+                        ※ イベントを選択すると、お知らせ詳細画面からそのイベントページへ直接移動できるようになります。
+                    </p>
+                </div>
+
+                <div className="space-y-2">
                     <label htmlFor="body" className="block text-sm font-medium text-[#8b98b0]">
-                        本文
+                        本文 <span className="text-red-400">*</span>
                     </label>
                     <textarea
                         id="body"
