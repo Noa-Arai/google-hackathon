@@ -7,6 +7,7 @@ import { api, Event, Announcement, RSVP, Settlement, Payment } from '@/lib/api/c
 import { useUser } from '@/components/providers/UserContext';
 import CreateAnnouncementForm from '@/features/announcement/CreateAnnouncementForm';
 import CreateSettlementForm from '@/features/settlement/CreateSettlementForm';
+import Modal from '@/components/Modal';
 
 interface SettlementWithStatus extends Settlement {
     myPayment?: Payment | null;
@@ -26,6 +27,11 @@ export default function EventDetailPage() {
 
     const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
     const [showSettlementForm, setShowSettlementForm] = useState(false);
+
+    // Payment Modal State
+    const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'PAYPAY'>('BANK');
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
     const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
     const [rsvpNote, setRsvpNote] = useState('');
     const [showSettlements, setShowSettlements] = useState(false);
@@ -81,9 +87,42 @@ export default function EventDetailPage() {
         finally { setRsvpSubmitting(false); }
     };
 
-    const handleReportPayment = async (settlementId: string, method: 'BANK' | 'PAYPAY') => {
-        try { await api.reportPayment(settlementId, method); await fetchData(); }
-        catch (err) { console.error(err); }
+    const openPaymentModal = (settlement: Settlement, method: 'BANK' | 'PAYPAY') => {
+        setSelectedSettlement(settlement);
+        setPaymentMethod(method);
+    };
+
+    const handleReportPayment = async () => {
+        if (!selectedSettlement) return;
+
+        setIsSubmittingPayment(true);
+        try {
+            await api.reportPayment(selectedSettlement.id, paymentMethod);
+            // Optimistic update
+            setSettlements(prev => prev.map(s => {
+                if (s.id === selectedSettlement.id) {
+                    return {
+                        ...s,
+                        myPayment: {
+                            id: 'temp',
+                            settlementId: s.id,
+                            userId: currentUser.id,
+                            status: 'PAID_REPORTED',
+                            method: paymentMethod,
+                            note: '',
+                            reportedAt: new Date().toISOString()
+                        }
+                    };
+                }
+                return s;
+            }));
+            setSelectedSettlement(null);
+        } catch (error) {
+            console.error('Failed to report payment:', error);
+            alert('支払いの報告に失敗しました');
+        } finally {
+            setIsSubmittingPayment(false);
+        }
     };
 
     if (loading) {
@@ -218,19 +257,19 @@ export default function EventDetailPage() {
                                     {!isPaid && (
                                         <div className="flex gap-2 mt-3">
                                             {settlement.bankInfo && (
-                                                <button onClick={() => handleReportPayment(settlement.id, 'BANK')}
+                                                <button onClick={() => openPaymentModal(settlement, 'BANK')}
                                                     className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
                                                     銀行振込
                                                 </button>
                                             )}
                                             {settlement.paypayInfo && (
-                                                <button onClick={() => handleReportPayment(settlement.id, 'PAYPAY')}
+                                                <button onClick={() => openPaymentModal(settlement, 'PAYPAY')}
                                                     className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
                                                     PayPay
                                                 </button>
                                             )}
                                             {!settlement.bankInfo && !settlement.paypayInfo && (
-                                                <button onClick={() => handleReportPayment(settlement.id, 'BANK')}
+                                                <button onClick={() => openPaymentModal(settlement, 'BANK')}
                                                     className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
                                                     支払い報告
                                                 </button>
@@ -313,6 +352,64 @@ export default function EventDetailPage() {
                     </div>
                 </div>
             )}
+
+
+            {/* Payment Modal */}
+            <Modal
+                isOpen={!!selectedSettlement}
+                onClose={() => setSelectedSettlement(null)}
+                title="お支払い詳細"
+            >
+                {selectedSettlement && (
+                    <div className="space-y-6">
+                        {/* Amount & Title */}
+                        <div className="bg-white/5 rounded-xl p-4 text-center">
+                            <p className="text-sm text-white/60 mb-1">{selectedSettlement.title}</p>
+                            <p className="text-3xl font-bold text-white">¥{selectedSettlement.amount.toLocaleString()}</p>
+                            <p className="text-xs text-white/40 mt-2">期限: {new Date(selectedSettlement.dueAt).toLocaleDateString('ja')}</p>
+                        </div>
+
+                        {/* Payment Method Details */}
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-white/80 border-l-2 border-blue-500 pl-2">
+                                {paymentMethod === 'BANK' ? '振込先口座' : 'PayPay送金先'}
+                            </h4>
+
+                            <div className="bg-white/5 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap select-all">
+                                {paymentMethod === 'BANK'
+                                    ? (selectedSettlement.bankInfo || '口座情報が登録されていません')
+                                    : (selectedSettlement.paypayInfo || 'PayPay情報が登録されていません')
+                                }
+                            </div>
+
+                            <p className="text-xs text-white/40">
+                                ※ 上記の宛先に送金後、下のボタンを押してください。
+                            </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => setSelectedSettlement(null)}
+                                className="flex-1 py-3 rounded-xl font-medium text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handleReportPayment}
+                                disabled={isSubmittingPayment}
+                                className="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isSubmittingPayment ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    '支払いを完了したとして報告'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

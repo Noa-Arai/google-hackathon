@@ -173,12 +173,38 @@ export default function ProfilePage() {
 
             // 5. Ranking
             const calcStats = stats || { totalCoins: 0, level: 1 };
-            const rankingData = MOCK_USERS.map((u) => ({
-                name: u.name, avatarUrl: u.avatarUrl,
-                coins: u.id === currentUser.id ? calcStats.totalCoins : Math.floor(Math.random() * 5000),
-                level: u.id === currentUser.id ? calcStats.level : Math.floor(Math.random() * 5) + 1,
-            }));
-            rankingData.sort((a, b) => b.coins - a.coins);
+            const rankingData = MOCK_USERS.map((u) => {
+                // Deterministic mock stats for other users based on their ID string
+                let mockCoins = 0;
+                let mockLevel = 1;
+
+                if (u.id === currentUser.id) {
+                    mockCoins = calcStats.totalCoins;
+                    mockLevel = calcStats.level;
+                } else {
+                    // Simple hash function to generate stable random numbers
+                    let hash = 0;
+                    for (let i = 0; i < u.id.length; i++) {
+                        hash = ((hash << 5) - hash) + u.id.charCodeAt(i);
+                        hash |= 0; // Convert to 32bit integer
+                    }
+                    const seed = Math.abs(hash);
+                    mockLevel = (seed % 20) + 1; // Level 1-20
+                    mockCoins = (seed % 10000) * (mockLevel / 2); // Coins roughly correlated with level
+                }
+
+                return {
+                    name: u.name,
+                    avatarUrl: u.avatarUrl,
+                    coins: Math.floor(mockCoins),
+                    level: mockLevel,
+                };
+            });
+            // Sort by Level desc, then Coins desc
+            rankingData.sort((a, b) => {
+                if (b.level !== a.level) return b.level - a.level;
+                return b.coins - a.coins;
+            });
             setAllUsersStats(rankingData);
 
             setLoading(false);

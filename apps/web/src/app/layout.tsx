@@ -5,7 +5,7 @@ import BottomNav from '@/components/BottomNav';
 import { UserProvider } from '@/components/providers/UserContext';
 
 export const metadata: Metadata = {
-  title: 'CIRCLE | サークル活動支援',
+  title: 'CircleMate | サークル活動支援',
   description: 'サークル活動を効率的に管理',
 };
 

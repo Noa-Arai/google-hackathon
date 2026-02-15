@@ -8,7 +8,7 @@ interface HeaderProps {
     circleName?: string;
 }
 
-export default function Header({ circleName = 'CIRCLE' }: HeaderProps) {
+export default function Header({ circleName = 'CircleMate' }: HeaderProps) {
     const pathname = usePathname();
 
     const navLinks = [

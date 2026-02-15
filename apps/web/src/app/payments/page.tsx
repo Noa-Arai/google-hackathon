@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api, SettlementWithPayment } from '@/lib/api';
+import { api, SettlementWithPayment, Settlement } from '@/lib/api';
 import Link from 'next/link';
+import Modal from '@/components/Modal';
+import { useUser } from '@/components/providers/UserContext';
 
 export default function PaymentsPage() {
     const [unpaidSettlements, setUnpaidSettlements] = useState<SettlementWithPayment[]>([]);
@@ -10,6 +12,12 @@ export default function PaymentsPage() {
     const [activeTab, setActiveTab] = useState<'unpaid' | 'paid'>('unpaid');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { currentUser } = useUser(); // Need current user for optimistic update
+
+    // Payment Modal State
+    const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'PAYPAY'>('BANK');
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
     useEffect(() => {
         const fetchSettlements = async () => {
@@ -30,6 +38,44 @@ export default function PaymentsPage() {
 
     const settlements = activeTab === 'unpaid' ? unpaidSettlements : paidSettlements;
 
+    const openPaymentModal = (settlement: Settlement, method: 'BANK' | 'PAYPAY') => {
+        setSelectedSettlement(settlement);
+        setPaymentMethod(method);
+    };
+
+    const handleReportPayment = async () => {
+        if (!selectedSettlement) return;
+
+        setIsSubmittingPayment(true);
+        try {
+            await api.reportPayment(selectedSettlement.id, paymentMethod);
+            // Move from unpaid to paid locally
+            setUnpaidSettlements(prev => prev.filter(s => s.settlement.id !== selectedSettlement.id));
+
+            const paidItem = unpaidSettlements.find(s => s.settlement.id === selectedSettlement.id);
+            if (paidItem) {
+                setPaidSettlements(prev => [{
+                    ...paidItem,
+                    payment: {
+                        id: 'temp',
+                        settlementId: paidItem.settlement.id,
+                        userId: currentUser?.id || '',
+                        status: 'PAID_REPORTED',
+                        method: paymentMethod,
+                        note: '',
+                        reportedAt: new Date().toISOString()
+                    }
+                }, ...prev]);
+            }
+            setSelectedSettlement(null);
+        } catch (error) {
+            console.error('Failed to report payment:', error);
+            alert('支払いの報告に失敗しました');
+        } finally {
+            setIsSubmittingPayment(false);
+        }
+    };
+
     return (
         <div className="max-w-2xl mx-auto relative">
             {/* Big outline text */}
@@ -47,8 +93,8 @@ export default function PaymentsPage() {
                 <button
                     onClick={() => setActiveTab('unpaid')}
                     className={`flex-1 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'unpaid'
-                            ? 'bg-[#0a0f1c] text-[#ef4444]'
-                            : 'text-[#8b98b0] hover:text-white'
+                        ? 'bg-[#0a0f1c] text-[#ef4444]'
+                        : 'text-[#8b98b0] hover:text-white'
                         }`}
                 >
                     <span>💸</span> 未払い
@@ -61,8 +107,8 @@ export default function PaymentsPage() {
                 <button
                     onClick={() => setActiveTab('paid')}
                     className={`flex-1 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'paid'
-                            ? 'bg-[#0a0f1c] text-[#22c55e]'
-                            : 'text-[#8b98b0] hover:text-white'
+                        ? 'bg-[#0a0f1c] text-[#22c55e]'
+                        : 'text-[#8b98b0] hover:text-white'
                         }`}
                 >
                     <span>✅</span> 済み
@@ -102,16 +148,73 @@ export default function PaymentsPage() {
                 <div className="space-y-4 relative z-10">
                     {settlements.map((item, index) => (
                         <div key={item.settlement.id} className="animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                            <PaymentCard item={item} isPaid={activeTab === 'paid'} />
+                            <PaymentCard item={item} isPaid={activeTab === 'paid'} onPay={openPaymentModal} />
                         </div>
                     ))}
                 </div>
             )}
+
+            {/* Payment Modal */}
+            <Modal
+                isOpen={!!selectedSettlement}
+                onClose={() => setSelectedSettlement(null)}
+                title="お支払い詳細"
+            >
+                {selectedSettlement && (
+                    <div className="space-y-6">
+                        {/* Amount & Title */}
+                        <div className="bg-white/5 rounded-xl p-4 text-center">
+                            <p className="text-sm text-white/60 mb-1">{selectedSettlement.title}</p>
+                            <p className="text-3xl font-bold text-white">¥{selectedSettlement.amount.toLocaleString()}</p>
+                            <p className="text-xs text-white/40 mt-2">期限: {new Date(selectedSettlement.dueAt).toLocaleDateString('ja')}</p>
+                        </div>
+
+                        {/* Payment Method Details */}
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-white/80 border-l-2 border-blue-500 pl-2">
+                                {paymentMethod === 'BANK' ? '振込先口座' : 'PayPay送金先'}
+                            </h4>
+
+                            <div className="bg-white/5 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap select-all">
+                                {paymentMethod === 'BANK'
+                                    ? (selectedSettlement.bankInfo || '口座情報が登録されていません')
+                                    : (selectedSettlement.paypayInfo || 'PayPay情報が登録されていません')
+                                }
+                            </div>
+
+                            <p className="text-xs text-white/40">
+                                ※ 上記の宛先に送金後、下のボタンを押してください。
+                            </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => setSelectedSettlement(null)}
+                                className="flex-1 py-3 rounded-xl font-medium text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handleReportPayment}
+                                disabled={isSubmittingPayment}
+                                className="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isSubmittingPayment ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    '支払いを完了したとして報告'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }
 
-function PaymentCard({ item, isPaid }: { item: SettlementWithPayment; isPaid: boolean }) {
+function PaymentCard({ item, isPaid, onPay }: { item: SettlementWithPayment; isPaid: boolean; onPay: (s: Settlement, m: 'BANK' | 'PAYPAY') => void }) {
     const { settlement, payment } = item;
 
     return (
@@ -137,14 +240,35 @@ function PaymentCard({ item, isPaid }: { item: SettlementWithPayment; isPaid: bo
                 </div>
             )}
 
-            {!isPaid && settlement.eventId && (
-                <Link
-                    href={`/events/${settlement.eventId}`}
-                    className="mt-4 inline-flex items-center gap-2 text-[#3b82f6] hover:underline"
-                >
-                    <span>イベント詳細で支払う</span>
-                    <span>→</span>
-                </Link>
+            {!isPaid && (
+                <div className="mt-4 flex gap-2">
+                    {settlement.bankInfo && (
+                        <button onClick={() => onPay(settlement, 'BANK')}
+                            className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
+                            銀行振込
+                        </button>
+                    )}
+                    {settlement.paypayInfo && (
+                        <button onClick={() => onPay(settlement, 'PAYPAY')}
+                            className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
+                            PayPay
+                        </button>
+                    )}
+                    {!settlement.bankInfo && !settlement.paypayInfo && (
+                        <button onClick={() => onPay(settlement, 'BANK')}
+                            className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
+                            支払い報告
+                        </button>
+                    )}
+                    {settlement.eventId && (
+                        <Link
+                            href={`/events/${settlement.eventId}`}
+                            className="flex-1 py-2 rounded-lg text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-1"
+                        >
+                            詳細 <span>→</span>
+                        </Link>
+                    )}
+                </div>
             )}
         </div>
     );
