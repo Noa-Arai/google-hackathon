@@ -63,6 +63,7 @@ func Setup(
 
 	// Announcement routes
 	mux.HandleFunc("POST /announcements", announcementHandler.Create)
+	mux.HandleFunc("GET /announcements/{id}", announcementHandler.Get)
 	mux.HandleFunc("PUT /announcements/{id}", announcementHandler.Update)
 	mux.HandleFunc("DELETE /announcements/{id}", announcementHandler.Delete)
 

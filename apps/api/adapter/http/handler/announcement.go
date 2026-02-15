@@ -45,6 +45,25 @@ func (h *AnnouncementHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(announcement)
 }
 
+// Get handles GET /announcements/{id}.
+func (h *AnnouncementHandler) Get(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	announcement, err := h.interactor.GetAnnouncement(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"announcement": announcement,
+		// For now, return empty attendance/payments to match frontend expectation
+		// Frontend expects { announcement, attendance, payments }
+		"attendance": nil,
+		"payments":   []interface{}{},
+	})
+}
+
 // GetByEvent handles GET /events/{eventId}/announcements.
 func (h *AnnouncementHandler) GetByEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := r.PathValue("eventId")

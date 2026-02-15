@@ -47,6 +47,11 @@ func (i *AnnouncementInteractor) GetByCircle(ctx context.Context, circleID strin
 	return i.announcementRepo.GetByCircle(ctx, circleID, limit)
 }
 
+// GetAnnouncement returns an announcement by ID.
+func (i *AnnouncementInteractor) GetAnnouncement(ctx context.Context, id string) (*domain.Announcement, error) {
+	return i.announcementRepo.GetByID(ctx, id)
+}
+
 // UpdateAnnouncement updates an announcement.
 func (i *AnnouncementInteractor) UpdateAnnouncement(ctx context.Context, id, title, body string) (*domain.Announcement, error) {
 	announcement, err := i.announcementRepo.GetByID(ctx, id)
