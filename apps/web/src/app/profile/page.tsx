@@ -227,10 +227,10 @@ export default function ProfilePage() {
     return (
         <div className="max-w-4xl mx-auto pb-20">
             {/* Dashboard Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 {/* Left Column: Stats & Ranking */}
-                <div className="space-y-6">
+                <div className="md:col-span-2 space-y-6">
                     {/* Profile & Level Card */}
                     <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-6 animate-fade-in relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />

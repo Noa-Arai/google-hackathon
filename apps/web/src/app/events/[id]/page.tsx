@@ -31,6 +31,7 @@ export default function EventDetailPage() {
     // Payment Modal State
     const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'PAYPAY'>('BANK');
+    const [paymentStep, setPaymentStep] = useState<'SELECT' | 'DETAILS'>('SELECT');
     const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
     const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
     const [rsvpNote, setRsvpNote] = useState('');
@@ -87,10 +88,19 @@ export default function EventDetailPage() {
         finally { setRsvpSubmitting(false); }
     };
 
-    const openPaymentModal = (settlement: Settlement, method: 'BANK' | 'PAYPAY') => {
+    const openPaymentModal = (settlement: Settlement) => {
         setSelectedSettlement(settlement);
-        setPaymentMethod(method);
+        setPaymentStep('SELECT');
+        // Default to BANK if user skips step (though they shouldn't with new UI)
+        setPaymentMethod('BANK');
     };
+
+    const handleSelectMethod = (method: 'BANK' | 'PAYPAY') => {
+        setPaymentMethod(method);
+        setPaymentStep('DETAILS');
+    };
+
+
 
     const handleReportPayment = async () => {
         if (!selectedSettlement) return;
@@ -255,25 +265,11 @@ export default function EventDetailPage() {
                                         </div>
                                     </div>
                                     {!isPaid && (
-                                        <div className="flex gap-2 mt-3">
-                                            {settlement.bankInfo && (
-                                                <button onClick={() => openPaymentModal(settlement, 'BANK')}
-                                                    className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
-                                                    銀行振込
-                                                </button>
-                                            )}
-                                            {settlement.paypayInfo && (
-                                                <button onClick={() => openPaymentModal(settlement, 'PAYPAY')}
-                                                    className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
-                                                    PayPay
-                                                </button>
-                                            )}
-                                            {!settlement.bankInfo && !settlement.paypayInfo && (
-                                                <button onClick={() => openPaymentModal(settlement, 'BANK')}
-                                                    className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
-                                                    支払い報告
-                                                </button>
-                                            )}
+                                        <div className="mt-3">
+                                            <button onClick={() => openPaymentModal(settlement)}
+                                                className="w-full py-2 rounded-lg text-xs font-medium text-white/80 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 transition-colors">
+                                                支払いへ進む
+                                            </button>
                                         </div>
                                     )}
                                 </div>

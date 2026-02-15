@@ -17,6 +17,7 @@ export default function PaymentsPage() {
     // Payment Modal State
     const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'PAYPAY'>('BANK');
+    const [paymentStep, setPaymentStep] = useState<'SELECT' | 'DETAILS'>('SELECT');
     const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
     useEffect(() => {
@@ -38,9 +39,15 @@ export default function PaymentsPage() {
 
     const settlements = activeTab === 'unpaid' ? unpaidSettlements : paidSettlements;
 
-    const openPaymentModal = (settlement: Settlement, method: 'BANK' | 'PAYPAY') => {
+    const openPaymentModal = (settlement: Settlement) => {
         setSelectedSettlement(settlement);
+        setPaymentStep('SELECT');
+        setPaymentMethod('BANK');
+    };
+
+    const handleSelectMethod = (method: 'BANK' | 'PAYPAY') => {
         setPaymentMethod(method);
+        setPaymentStep('DETAILS');
     };
 
     const handleReportPayment = async () => {
@@ -162,51 +169,99 @@ export default function PaymentsPage() {
             >
                 {selectedSettlement && (
                     <div className="space-y-6">
-                        {/* Amount & Title */}
-                        <div className="bg-white/5 rounded-xl p-4 text-center">
-                            <p className="text-sm text-white/60 mb-1">{selectedSettlement.title}</p>
-                            <p className="text-3xl font-bold text-white">¥{selectedSettlement.amount.toLocaleString()}</p>
-                            <p className="text-xs text-white/40 mt-2">期限: {new Date(selectedSettlement.dueAt).toLocaleDateString('ja')}</p>
-                        </div>
+                        {/* Step 1: Select Method */}
+                        {paymentStep === 'SELECT' && (
+                            <>
+                                <div className="text-center mb-6">
+                                    <p className="text-sm text-white/60 mb-2">支払い方法を選択してください</p>
+                                    <p className="text-2xl font-bold text-white">¥{selectedSettlement.amount.toLocaleString()}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        onClick={() => handleSelectMethod('BANK')}
+                                        className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex flex-col items-center gap-2 group"
+                                    >
+                                        <span className="text-2xl group-hover:scale-110 transition-transform">🏦</span>
+                                        <span className="text-sm font-medium text-white">銀行振込</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleSelectMethod('PAYPAY')}
+                                        className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex flex-col items-center gap-2 group"
+                                    >
+                                        <span className="text-2xl group-hover:scale-110 transition-transform">📱</span>
+                                        <span className="text-sm font-medium text-white">PayPay</span>
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedSettlement(null)}
+                                    className="w-full mt-4 py-3 text-white/40 hover:text-white transition-colors text-sm"
+                                    disabled={isSubmittingPayment}
+                                >
+                                    キャンセル
+                                </button>
+                            </>
+                        )}
 
-                        {/* Payment Method Details */}
-                        <div className="space-y-3">
-                            <h4 className="text-sm font-medium text-white/80 border-l-2 border-blue-500 pl-2">
-                                {paymentMethod === 'BANK' ? '振込先口座' : 'PayPay送金先'}
-                            </h4>
+                        {/* Step 2: Details */}
+                        {paymentStep === 'DETAILS' && (
+                            <>
+                                {/* Amount & Title */}
+                                <div className="bg-white/5 rounded-xl p-4 text-center">
+                                    <p className="text-sm text-white/60 mb-1">{selectedSettlement.title}</p>
+                                    <p className="text-3xl font-bold text-white">¥{selectedSettlement.amount.toLocaleString()}</p>
+                                    <p className="text-xs text-white/40 mt-2">期限: {new Date(selectedSettlement.dueAt).toLocaleDateString('ja')}</p>
+                                </div>
 
-                            <div className="bg-white/5 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap select-all">
-                                {paymentMethod === 'BANK'
-                                    ? (selectedSettlement.bankInfo || '口座情報が登録されていません')
-                                    : (selectedSettlement.paypayInfo || 'PayPay情報が登録されていません')
-                                }
-                            </div>
+                                {/* Payment Method Details */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-sm font-medium text-white/80 border-l-2 border-blue-500 pl-2">
+                                            {paymentMethod === 'BANK' ? '振込先口座' : 'PayPay送金先'}
+                                        </h4>
+                                        <button
+                                            onClick={() => setPaymentStep('SELECT')}
+                                            className="text-xs text-blue-400 hover:text-blue-300"
+                                            disabled={isSubmittingPayment}
+                                        >
+                                            変更する
+                                        </button>
+                                    </div>
 
-                            <p className="text-xs text-white/40">
-                                ※ 上記の宛先に送金後、下のボタンを押してください。
-                            </p>
-                        </div>
+                                    <div className="bg-white/5 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap select-all">
+                                        {paymentMethod === 'BANK'
+                                            ? (selectedSettlement.bankInfo || '口座情報が登録されていません')
+                                            : (selectedSettlement.paypayInfo || 'PayPay情報が登録されていません')
+                                        }
+                                    </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                onClick={() => setSelectedSettlement(null)}
-                                className="flex-1 py-3 rounded-xl font-medium text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
-                            >
-                                キャンセル
-                            </button>
-                            <button
-                                onClick={handleReportPayment}
-                                disabled={isSubmittingPayment}
-                                className="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
-                            >
-                                {isSubmittingPayment ? (
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                    '支払いを完了したとして報告'
-                                )}
-                            </button>
-                        </div>
+                                    <p className="text-xs text-white/40">
+                                        ※ 上記の宛先に送金後、下のボタンを押してください。
+                                    </p>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        onClick={() => setSelectedSettlement(null)}
+                                        className="flex-1 py-3 rounded-xl font-medium text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                                        disabled={isSubmittingPayment}
+                                    >
+                                        キャンセル
+                                    </button>
+                                    <button
+                                        onClick={handleReportPayment}
+                                        disabled={isSubmittingPayment}
+                                        className="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmittingPayment ? (
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            '支払いを完了したとして報告'
+                                        )}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </Modal>
@@ -214,7 +269,7 @@ export default function PaymentsPage() {
     );
 }
 
-function PaymentCard({ item, isPaid, onPay }: { item: SettlementWithPayment; isPaid: boolean; onPay: (s: Settlement, m: 'BANK' | 'PAYPAY') => void }) {
+function PaymentCard({ item, isPaid, onPay }: { item: SettlementWithPayment; isPaid: boolean; onPay: (s: Settlement) => void }) {
     const { settlement, payment } = item;
 
     return (
@@ -242,22 +297,16 @@ function PaymentCard({ item, isPaid, onPay }: { item: SettlementWithPayment; isP
 
             {!isPaid && (
                 <div className="mt-4 flex gap-2">
-                    {settlement.bankInfo && (
-                        <button onClick={() => onPay(settlement, 'BANK')}
-                            className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
-                            銀行振込
-                        </button>
-                    )}
-                    {settlement.paypayInfo && (
-                        <button onClick={() => onPay(settlement, 'PAYPAY')}
-                            className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
-                            PayPay
-                        </button>
-                    )}
                     {!settlement.bankInfo && !settlement.paypayInfo && (
-                        <button onClick={() => onPay(settlement, 'BANK')}
+                        <button onClick={() => onPay(settlement)}
                             className="flex-1 py-2 rounded-lg text-xs text-white/50 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
                             支払い報告
+                        </button>
+                    )}
+                    {(settlement.bankInfo || settlement.paypayInfo) && (
+                        <button onClick={() => onPay(settlement)}
+                            className="flex-1 py-2 rounded-lg text-xs font-medium text-white/80 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 transition-colors">
+                            支払いへ進む
                         </button>
                     )}
                     {settlement.eventId && (
