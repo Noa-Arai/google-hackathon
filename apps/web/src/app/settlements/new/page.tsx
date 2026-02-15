@@ -216,13 +216,26 @@ export default function NewSettlementPage() {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between border-b border-white/10 pb-2">
                         <h2 className="text-lg font-semibold text-white">対象者 ({selectedUserIds.size}名)</h2>
-                        <button
-                            type="button"
-                            onClick={toggleAll}
-                            className="text-sm text-blue-400 hover:text-blue-300"
-                        >
-                            {isAllSelected ? '全解除' : '全選択'}
-                        </button>
+                        <div className="flex gap-4">
+                            {/* Hidden feature for demo: Add dummy members if only 1 exists */}
+                            {members.length <= 1 && (
+                                <button
+                                    type="button"
+                                    onClick={addDemoMembers}
+                                    disabled={isLoading || isSubmitting}
+                                    className="text-xs text-[#8b98b0] hover:text-white underline"
+                                >
+                                    デモ用メンバー追加
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={toggleAll}
+                                className="text-sm text-blue-400 hover:text-blue-300"
+                            >
+                                {isAllSelected ? '全解除' : '全選択'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
